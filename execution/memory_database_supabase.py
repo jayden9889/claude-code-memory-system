@@ -22,6 +22,7 @@ class SupabaseMemoryDatabase:
             use_supabase: If True, try to use Supabase. Falls back to JSON if unavailable.
         """
         self.use_supabase = use_supabase
+        self.supabase_client = None
         self.supabase_available = self._check_supabase_connection()
 
         # Local fallback paths
@@ -37,7 +38,11 @@ class SupabaseMemoryDatabase:
             directory.mkdir(parents=True, exist_ok=True)
 
     def _check_supabase_connection(self) -> bool:
-        """Check if Supabase MCP is available and configured."""
+        """Check if Supabase is available and configured."""
+        # Load environment variables if not already loaded
+        from dotenv import load_dotenv
+        load_dotenv()
+
         # Check for environment variables
         supabase_url = os.getenv('SUPABASE_URL')
         supabase_key = os.getenv('SUPABASE_SERVICE_KEY')
@@ -46,34 +51,51 @@ class SupabaseMemoryDatabase:
             print("⚠️  Supabase credentials not found. Using local JSON storage.")
             return False
 
-        # TODO: When MCP is active, this will check actual connection
-        print("✓ Supabase credentials found. Cloud storage enabled.")
-        return True
+        try:
+            from supabase import create_client
+            self.supabase_client = create_client(supabase_url, supabase_key)
 
-    def _supabase_query(self, sql: str, params: Dict = None) -> List[Dict]:
+            # Test connection by checking if table exists
+            self.supabase_client.table('memories').select('id', count='exact').limit(0).execute()
+            print("✓ Supabase connection established. Cloud storage enabled.")
+            return True
+        except ImportError:
+            print("⚠️  Supabase Python client not installed. Using local JSON storage.")
+            return False
+        except Exception as e:
+            print(f"⚠️  Supabase connection failed: {e}. Using local JSON storage.")
+            return False
+
+    def _supabase_query(self, table: str, filters: Dict = None, limit: int = None) -> List[Dict]:
         """
-        Execute SQL query via Supabase MCP.
+        Query Supabase table.
 
         Args:
-            sql: SQL query string
-            params: Query parameters
+            table: Table name
+            filters: Optional filters
+            limit: Optional result limit
 
         Returns:
             List of result rows
         """
-        if not self.supabase_available:
+        if not self.supabase_available or not self.supabase_client:
             raise Exception("Supabase not available")
 
-        # TODO: Replace with actual MCP call when available
-        # For now, this is a placeholder that will be replaced
-        # with proper MCP integration once credentials are provided
+        query = self.supabase_client.table(table).select('*')
 
-        print(f"📊 Would execute Supabase query: {sql}")
-        return []
+        if filters:
+            for key, value in filters.items():
+                query = query.eq(key, value)
+
+        if limit:
+            query = query.limit(limit)
+
+        result = query.execute()
+        return result.data if result.data else []
 
     def _supabase_insert(self, table: str, data: Dict) -> str:
         """
-        Insert data into Supabase table via MCP.
+        Insert data into Supabase table.
 
         Args:
             table: Table name
@@ -82,11 +104,10 @@ class SupabaseMemoryDatabase:
         Returns:
             ID of inserted row
         """
-        if not self.supabase_available:
+        if not self.supabase_available or not self.supabase_client:
             raise Exception("Supabase not available")
 
-        # TODO: Replace with actual MCP call
-        print(f"💾 Would insert into {table}: {data.get('id', 'unknown')}")
+        self.supabase_client.table(table).insert(data).execute()
         return data.get('id', 'unknown')
 
     def store_memory(self, category: str, content: Dict, tags: List[str] = None) -> str:
@@ -177,25 +198,24 @@ class SupabaseMemoryDatabase:
     def _retrieve_from_supabase(self, category: Optional[str],
                                 tags: Optional[List[str]],
                                 limit: int) -> List[Dict]:
-        """Retrieve memories from Supabase via MCP."""
-        # Build SQL query
-        sql = "SELECT * FROM memories"
-        conditions = []
+        """Retrieve memories from Supabase."""
+        if not self.supabase_client:
+            raise Exception("Supabase not available")
+
+        query = self.supabase_client.table('memories').select('*')
 
         if category:
-            conditions.append(f"category = '{category}'")
+            query = query.eq('category', category)
 
         if tags:
-            # PostgreSQL array overlap operator
-            tags_str = "{" + ",".join(tags) + "}"
-            conditions.append(f"tags && '{tags_str}'")
+            # Use PostgreSQL array overlap operator for tag filtering
+            for tag in tags:
+                query = query.contains('tags', [tag])
 
-        if conditions:
-            sql += " WHERE " + " AND ".join(conditions)
+        query = query.order('created_at', desc=True).limit(limit)
+        result = query.execute()
 
-        sql += f" ORDER BY created_at DESC LIMIT {limit}"
-
-        return self._supabase_query(sql)
+        return result.data if result.data else []
 
     def _retrieve_local(self, category: Optional[str],
                        tags: Optional[List[str]],
@@ -247,16 +267,14 @@ class SupabaseMemoryDatabase:
         Returns:
             List of matching memories
         """
-        if self.supabase_available:
+        if self.supabase_available and self.supabase_client:
             try:
-                # Use PostgreSQL full-text search
-                sql = f"""
-                    SELECT * FROM memories
-                    WHERE to_tsvector('english', content::text) @@ plainto_tsquery('english', '{query}')
-                    ORDER BY created_at DESC
-                    LIMIT {limit}
-                """
-                return self._supabase_query(sql)
+                # Use the search_memories function we created
+                result = self.supabase_client.rpc('search_memories', {
+                    'search_query': query,
+                    'result_limit': limit
+                }).execute()
+                return result.data if result.data else []
             except Exception as e:
                 print(f"⚠️  Supabase search failed: {e}. Using local search.")
                 self.supabase_available = False
@@ -289,45 +307,29 @@ class SupabaseMemoryDatabase:
 
     def get_memory_summary(self) -> Dict:
         """Get summary statistics of the memory database."""
-        if self.supabase_available:
+        if self.supabase_available and self.supabase_client:
             try:
-                # Get counts from Supabase
-                sql = """
-                    SELECT category, COUNT(*) as count
-                    FROM memories
-                    GROUP BY category
-                """
-                results = self._supabase_query(sql)
+                # Get all memories and count them
+                all_memories = self.supabase_client.table('memories').select('category, created_at').execute()
 
-                summary = {
-                    "total_memories": sum(r['count'] for r in results),
-                    "insights": 0,
-                    "learnings": 0,
-                    "patterns": 0,
-                    "context_history": 0,
-                    "storage": "Supabase (cloud)",
-                    "last_updated": None
+                by_category = {}
+                for memory in all_memories.data:
+                    cat = memory['category']
+                    by_category[cat] = by_category.get(cat, 0) + 1
+
+                return {
+                    "total": len(all_memories.data),
+                    "by_category": by_category,
+                    "storage": "Supabase (cloud)"
                 }
-
-                for row in results:
-                    summary[row['category']] = row['count']
-
-                return summary
 
             except Exception as e:
                 print(f"⚠️  Supabase summary failed: {e}. Using local summary.")
                 self.supabase_available = False
 
         # Fallback to local summary
-        summary = {
-            "total_memories": 0,
-            "insights": 0,
-            "learnings": 0,
-            "patterns": 0,
-            "context_history": 0,
-            "storage": "Local JSON files",
-            "last_updated": None
-        }
+        by_category = {}
+        total = 0
 
         for category, directory in [
             ("insights", self.insights_dir),
@@ -337,23 +339,14 @@ class SupabaseMemoryDatabase:
         ]:
             if directory.exists():
                 count = len(list(directory.glob("*.json")))
-                summary[category] = count
-                summary["total_memories"] += count
+                by_category[category] = count
+                total += count
 
-        # Get last commit date
-        try:
-            result = subprocess.run(
-                ["git", "log", "-1", "--format=%ci"],
-                cwd=self.db_path,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            summary["last_updated"] = result.stdout.strip()
-        except Exception:
-            pass
-
-        return summary
+        return {
+            "total": total,
+            "by_category": by_category,
+            "storage": "Local JSON"
+        }
 
     def _git_commit(self, file_path: Path, message: str):
         """Commit changes to git repository (local backup)."""
