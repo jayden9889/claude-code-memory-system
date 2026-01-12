@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "post_tool_use": {
+      "enabled": true,
+      "script": ".claude/hooks/context_monitor.py",
+      "description": "Monitor context usage after each tool use"
+    },
+    "user_prompt_submit": {
+      "enabled": true,
+      "script": ".claude/hooks/context_monitor.py",
+      "description": "Check context usage on user prompt"
+    }
+  },
+  "memory_system": {
+    "enabled": true,
+    "threshold_percent": 80,
+    "auto_save": false,
+    "memory_database_path": "memory_database"
+  }
+}
