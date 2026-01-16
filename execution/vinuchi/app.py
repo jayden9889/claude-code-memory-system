@@ -1287,15 +1287,9 @@ def render_blog_viewer():
         formatted_blog = format_blog_for_copy(blog['title'], blog['content'])
 
         with col_copy:
-            # Use download button - 100% reliable way to get text to user
-            st.download_button(
-                label="📋 Download Blog",
-                data=formatted_blog,
-                file_name=f"{blog['title'][:30].replace(' ', '_')}.txt",
-                mime="text/plain",
-                use_container_width=True,
-                key="download_blog_btn"
-            )
+            # Use st-copy-to-clipboard for reliable clipboard copy
+            from st_copy_to_clipboard import st_copy_to_clipboard
+            st_copy_to_clipboard(formatted_blog, "📋 Copy Blog", key="copy_blog_btn")
 
         with col_edit:
             if st.button("✏️ Edit Blog", key="edit_blog_btn", use_container_width=True):
@@ -1304,17 +1298,6 @@ def render_blog_viewer():
                 st.session_state.edit_title_input = blog['title']
                 st.session_state.edit_content_input = blog['content']
                 st.rerun()
-
-        # Show copyable text area - user can select all and copy
-        with st.expander("📋 Copy Blog Text", expanded=False):
-            st.text_area(
-                "Select all and copy (Ctrl+A, Ctrl+C)",
-                value=formatted_blog,
-                height=300,
-                key="copy_text_area",
-                label_visibility="collapsed"
-            )
-            st.caption("Select all text above and press Ctrl+C (or Cmd+C on Mac) to copy")
 
 
 def render_approved_blogs():
