@@ -310,30 +310,6 @@ st.markdown("""
         white-space: nowrap !important;
     }
 
-    /* Quick Topics buttons - allow text wrapping and style nicely */
-    .quick-topic-btn button {
-        white-space: normal !important;
-        text-align: left !important;
-        padding: 0.75rem 1rem !important;
-        min-height: 60px !important;
-        line-height: 1.4 !important;
-        font-size: 0.9rem !important;
-        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%) !important;
-        border: 1px solid #4a5568 !important;
-        color: #e2e8f0 !important;
-        border-radius: 8px !important;
-        transition: all 0.2s ease !important;
-    }
-    .quick-topic-btn button:hover {
-        border-color: #63b3ed !important;
-        background: linear-gradient(135deg, #3d4a5c 0%, #2a3441 100%) !important;
-        transform: translateY(-1px) !important;
-    }
-    .quick-topic-btn button:disabled {
-        opacity: 0.6 !important;
-        cursor: not-allowed !important;
-    }
-
     /* Sidebar styling */
     section[data-testid="stSidebar"] > div {
         background: #1a202c;
@@ -920,10 +896,9 @@ def render_main_content():
         suggestions = st.session_state.quick_topics
 
         for i, sug in enumerate(suggestions):
-            # Wrap in div with custom class for styling
-            st.markdown('<div class="quick-topic-btn">', unsafe_allow_html=True)
-            clicked = st.button(sug, key=f"quick_{i}", use_container_width=True, disabled=st.session_state.is_generating)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Truncate display text for clean buttons (keep full topic for click)
+            display_text = sug if len(sug) <= 50 else sug[:47] + "..."
+            clicked = st.button(display_text, key=f"quick_{i}", use_container_width=True, disabled=st.session_state.is_generating)
             if clicked:
                 # Set pending topic (will be applied before form renders on next rerun)
                 st.session_state.pending_quick_topic = sug
