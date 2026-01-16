@@ -180,11 +180,13 @@ Secondary: corporate socks, corporate jewellery, woven ties, printed ties
 Pattern: Weave keywords naturally into flowing sentences - never stuff them artificially
 
 ### PILLAR 6: STRUCTURE
-- Target 550-590 words (this is the ideal range)
+- **CRITICAL: Write 550-590 words** - NOT less, NOT more. Count your words!
+- This is LONGER than typical blog posts - be expansive and thorough
 - 8-12 paragraphs of flowing prose
 - Jump straight into the topic - no generic intros
 - End with emphatic statement or trailing thought
-- NEVER be brief or punchy - be expansive and conversational
+- NEVER be brief or punchy - be EXPANSIVE and conversational
+- If your draft is under 550 words, ADD MORE DETAIL and EXPAND your points
 
 ### PILLAR 7: GRAMMAR & SPELLING CORRECTNESS (CRITICAL)
 **NOTE:** The original Vinuchi blogs contain some grammar errors (they were written manually).
@@ -398,15 +400,19 @@ preferences in the system prompt are minor tweaks - they do NOT override this vo
 
 ## REQUIREMENTS:
 - **TOPIC: Write specifically about "{topic}"** - this is the user's chosen topic, follow it closely
-- **TARGET LENGTH: 550-590 words** - This is the ideal range. Aim for around 570 words.
+- **⚠️ MANDATORY WORD COUNT: 550-590 WORDS ⚠️** - This is NON-NEGOTIABLE. Count your words!
+  - Under 550 words = TOO SHORT, expand your points
+  - Over 590 words = TOO LONG, trim slightly
+  - Aim for exactly 570 words
 - Match the conversational, meandering style of the examples ABOVE
 - Your voice must be INDISTINGUISHABLE from the original blog samples
 - Include relevant SEO keywords naturally (custom ties, school ties, etc.){seo_reminder}
 - Write in first person, sharing your expert opinions
 - NO bullet points - use flowing prose only
 - Make it engaging and passionate
+- BE THOROUGH - this is a longer-form blog post, not a quick snippet
 
-Write the complete blog now about "{topic}" (target 550-590 words), starting with the title in CAPS:"""
+Write the complete blog now about "{topic}" (MUST BE 550-590 words - count them!), starting with the title in CAPS:"""
 
         return prompt
 
