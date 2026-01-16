@@ -421,14 +421,13 @@ st.markdown("""
         font-size: 14px !important;
     }
 
-    /* Quick Topics buttons - centered text with equal padding */
+    /* Quick Topics buttons - generous padding for clean look */
     section[data-testid="stSidebar"] [data-testid="stButton"] button {
-        padding: 12px 24px !important;
+        padding: 14px 32px !important;
         text-align: center !important;
+        display: flex !important;
         justify-content: center !important;
-        text-overflow: ellipsis !important;
-        overflow: hidden !important;
-        white-space: nowrap !important;
+        align-items: center !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -936,8 +935,8 @@ def render_main_content():
         suggestions = st.session_state.quick_topics
 
         for i, sug in enumerate(suggestions):
-            # Truncate display text for clean buttons (keep full topic for click)
-            display_text = sug if len(sug) <= 50 else sug[:47] + "..."
+            # Truncate display text for clean buttons (shorter = more padding room)
+            display_text = sug if len(sug) <= 40 else sug[:37] + "..."
             clicked = st.button(display_text, key=f"quick_{i}", use_container_width=True, disabled=st.session_state.is_generating)
             if clicked:
                 # Set pending topic (will be applied before form renders on next rerun)
