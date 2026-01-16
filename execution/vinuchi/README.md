@@ -152,7 +152,8 @@ Streamlit-based UI that provides:
 - Open any approved blog to view full content
 - Copy button to copy formatted blog to clipboard
 - Edit button to manually modify title and content
-- Edit mode shows word count validation
+- Edit mode uses dark blue theme matching the blog view (not light/white)
+- Edit mode shows word count validation with color indicators
 - Cancel confirmation dialog prevents accidental loss of changes
 
 ### 3. persistent_memory.py - The Memory
