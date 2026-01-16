@@ -126,12 +126,13 @@ def _validate_environment():
     return missing
 
 
-# ============ PASSWORD PROTECTION ============
-# Check password BEFORE loading the rest of the app
-if not check_password():
-    st.stop()
+# ============ PASSWORD PROTECTION (DISABLED) ============
+# Password protection has been disabled - app is publicly accessible
+# To re-enable, uncomment the lines below and set APP_PASSWORD in secrets
+# if not check_password():
+#     st.stop()
 
-# Now validate environment (only after authentication)
+# Validate environment on startup
 _missing_env = _validate_environment()
 if _missing_env:
     st.error(f"Missing required environment variables: {', '.join(_missing_env)}")
