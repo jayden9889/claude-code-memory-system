@@ -4,8 +4,29 @@
 
 **Estimated Time:** 30-45 minutes
 
+**Last Updated:** January 16, 2026
+
 > **MAINTENANCE NOTE:** This file MUST be updated whenever dependencies, setup steps,
 > or environment variables change. Also update: README.md and PROMPT_LOG.txt.
+
+---
+
+## Current Live Deployment
+
+The app is currently live at:
+- **URL:** https://jayden9889-claude-code-memory-system-executionvinuchiapp-kbttv1.streamlit.app/
+- **GitHub Repo:** https://github.com/jayden9889/claude-code-memory-system
+- **Main File Path:** `execution/vinuchi/app.py`
+- **Hosting:** Streamlit Cloud (free tier)
+- **Auto-Deploy:** Yes - pushes to `main` branch auto-deploy in ~1-2 minutes
+
+### To Update the Live App
+```bash
+git add .
+git commit -m "Your change description"
+git push origin main
+# Wait 1-2 minutes, then refresh the app URL
+```
 
 ---
 
@@ -59,11 +80,12 @@ pip install -r requirements.txt
 
 These are the key packages needed:
 ```
-python-dotenv==1.0.0      # Load .env files
-anthropic>=0.39.0         # Claude API
-streamlit>=1.40.0         # Web UI framework
-requests==2.31.0          # HTTP requests
-beautifulsoup4==4.12.3    # Web scraping
+python-dotenv==1.0.0        # Load .env files
+anthropic>=0.39.0           # Claude API
+streamlit>=1.40.0           # Web UI framework
+st-copy-to-clipboard>=0.1.0 # Clipboard copy functionality
+requests==2.31.0            # HTTP requests
+beautifulsoup4==4.12.3      # Web scraping
 ```
 
 ---
@@ -202,7 +224,10 @@ Streamlit Cloud is a free hosting service that:
 
 ### Step 1: Push to GitHub
 
-If not already done, push your code to GitHub:
+The code is already hosted on GitHub:
+- **Repo:** https://github.com/jayden9889/claude-code-memory-system
+
+If setting up fresh, push your code to GitHub:
 
 ```bash
 # Initialize git (if not done)
@@ -214,8 +239,8 @@ git add .
 # Commit
 git commit -m "Initial commit"
 
-# Add remote (replace with your repo URL)
-git remote add origin https://github.com/YOUR-USERNAME/vinuchi-blog-writer.git
+# Add remote (use the existing repo or create your own)
+git remote add origin https://github.com/jayden9889/claude-code-memory-system.git
 
 # Push
 git push -u origin main

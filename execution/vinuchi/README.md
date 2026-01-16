@@ -30,18 +30,33 @@ App will be available at: http://localhost:8501
 
 ---
 
+## Live Deployment
+
+The app is currently live and accessible to the client:
+
+| Item | Value |
+|------|-------|
+| **Live URL** | https://jayden9889-claude-code-memory-system-executionvinuchiapp-kbttv1.streamlit.app/ |
+| **GitHub Repo** | https://github.com/jayden9889/claude-code-memory-system |
+| **Hosting** | Streamlit Cloud (free tier) |
+| **Auto-Deploy** | Yes - pushes to `main` trigger auto-deploy |
+
+**To share with a client:** Just send them the Live URL above. They open it in any browser - no installation needed.
+
+---
+
 ## Deployment Options
 
 ### Local Development
 Run `streamlit run app.py` and access at localhost:8501.
 
-### Streamlit Cloud (Recommended for Remote Users)
+### Streamlit Cloud (Current Setup)
 Free hosting with auto-deploy from GitHub. See REDEPLOY.md for detailed setup instructions.
 
-1. Push code to GitHub
-2. Connect repo to share.streamlit.io
-3. Add secrets (ANTHROPIC_API_KEY, APP_PASSWORD) in Streamlit Cloud settings
-4. Share the URL with your client
+1. Code is pushed to GitHub repo
+2. Repo is connected to share.streamlit.io
+3. Secrets (ANTHROPIC_API_KEY, APP_PASSWORD) are configured in Streamlit Cloud settings
+4. Client accesses the app via the public URL
 
 ---
 
