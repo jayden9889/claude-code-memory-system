@@ -51,6 +51,7 @@ def _ensure_api_key_from_secrets():
 _ensure_api_key_from_secrets()
 
 # HARD LIMITS
+MIN_WORDS = 550  # Absolute minimum - blogs MUST be over 500 words
 MAX_WORDS = 600  # Absolute maximum (590 + 10 leeway)
 TARGET_WORDS = 570  # Target to aim for (550-590 range)
 SIMILARITY_THRESHOLD = 0.6  # Block if 60%+ similar to existing blog
@@ -437,8 +438,10 @@ Write the complete blog now about "{topic}" (MUST BE 550-590 words - count them!
 
         word_count = len(content.split())
 
-        # 1. WORD COUNT CHECK (HARD LIMIT)
-        if word_count > MAX_WORDS:
+        # 1. WORD COUNT CHECK (HARD LIMITS - MIN AND MAX)
+        if word_count < MIN_WORDS:
+            issues.append(f"WORD COUNT TOO LOW: {word_count} words (minimum {MIN_WORDS} required)")
+        elif word_count > MAX_WORDS:
             issues.append(f"WORD COUNT EXCEEDED: {word_count} words (max {MAX_WORDS})")
         elif word_count > 590:
             warnings.append(f"Word count slightly high: {word_count} words (target: 550-590)")
@@ -503,18 +506,34 @@ Write the complete blog now about "{topic}" (MUST BE 550-590 words - count them!
         for attempt in range(1, max_attempts + 1):
             print(f"\n3. Generating with Claude (attempt {attempt}/{max_attempts})...")
 
-            # Adjust prompt if retrying due to word count
+            # Adjust prompt if retrying due to word count issues
             current_user_prompt = user_prompt
-            if attempt > 1:
-                current_user_prompt = user_prompt.replace(
-                    "target 550-590 words",
-                    f"STRICTLY 550-580 words - previous attempt was too long"
-                )
+            if attempt > 1 and hasattr(self, '_last_word_count'):
+                if self._last_word_count < MIN_WORDS:
+                    # Previous was too short - ask for more
+                    current_user_prompt = user_prompt.replace(
+                        "550-590 words",
+                        f"STRICTLY 570-590 words - previous attempt was only {self._last_word_count} words, WRITE MORE"
+                    )
+                elif self._last_word_count > MAX_WORDS:
+                    # Previous was too long - ask for less
+                    current_user_prompt = user_prompt.replace(
+                        "550-590 words",
+                        f"STRICTLY 550-580 words - previous attempt was too long"
+                    )
 
             try:
+                # Adjust tokens based on previous attempt
+                if attempt > 1 and hasattr(self, '_last_word_count') and self._last_word_count < MIN_WORDS:
+                    max_tokens = 2500  # More tokens if previous was too short
+                elif attempt > 1:
+                    max_tokens = 1500  # Fewer tokens if previous was too long
+                else:
+                    max_tokens = 2000  # Default for first attempt
+
                 response = self.client.messages.create(
                     model="claude-sonnet-4-20250514",
-                    max_tokens=1500 if attempt > 1 else 2000,  # Reduce tokens on retry
+                    max_tokens=max_tokens,
                     system=system_prompt,
                     messages=[{"role": "user", "content": current_user_prompt}]
                 )
@@ -532,7 +551,8 @@ Write the complete blog now about "{topic}" (MUST BE 550-590 words - count them!
             # 4. REVIEW AGAINST DATABASE
             print(f"\n4. Reviewing blog against database...")
             review = self._review_blog(title, content)
-            print(f"   Word count: {review['word_count']} (max: {MAX_WORDS})")
+            self._last_word_count = review['word_count']  # Store for retry logic
+            print(f"   Word count: {review['word_count']} (min: {MIN_WORDS}, max: {MAX_WORDS})")
 
             if review['issues']:
                 print("   REVIEW FAILED:")
@@ -609,7 +629,7 @@ Write the complete blog now about "{topic}" (MUST BE 550-590 words - count them!
         print(f"\n{'='*60}")
         print(f"GENERATION COMPLETE")
         print(f"Title: {title}")
-        print(f"Words: {result['word_count']} / {MAX_WORDS} max")
+        print(f"Words: {result['word_count']} (target: {MIN_WORDS}-590)")
         print(f"Valid: {validation['valid']}")
         print(f"Attempts: {attempt}")
         print(f"{'='*60}")

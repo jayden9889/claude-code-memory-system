@@ -148,7 +148,7 @@ This is the core blog generator. It:
 - Product expertise
 - Conversational authority
 - Natural SEO integration
-- 500-word structure
+- 550-590 word structure (minimum 550 words enforced)
 - Grammar correctness (match style but use proper grammar - original blogs have some errors)
 
 ### 2. app.py - The Interface

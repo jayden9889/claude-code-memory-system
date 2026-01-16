@@ -1,7 +1,7 @@
 ================================================================================
 VINUCHI BLOG WRITER - PROMPT LOG
 ================================================================================
-Last Updated: January 16, 2026 (Added password protection & Streamlit Cloud support)
+Last Updated: January 16, 2026 (Added minimum word count enforcement - blogs must be 550+ words)
 Purpose: Backup of all system prompts and brand directives used in this project
 
 MAINTENANCE NOTE: This file MUST be updated whenever ANY system prompt, brand
@@ -375,9 +375,9 @@ SECTION 8: VALIDATION THRESHOLDS
 Location: Various files
 
 Word Count:
-- MAX_WORDS = 515 (absolute maximum)
-- TARGET_WORDS = 480 (aim for this)
-- Warning threshold = 500
+- MIN_WORDS = 550 (absolute minimum - blogs MUST be 500+ words)
+- MAX_WORDS = 600 (absolute maximum)
+- TARGET_WORDS = 570 (aim for 550-590 range)
 
 Tweaker Change Limits:
 - Word changes: max 5% content change
