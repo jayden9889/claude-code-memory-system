@@ -1,0 +1,15 @@
+# Vinuchi Blog Writer - Dependencies
+# This file is used by Streamlit Cloud for deployment
+
+# Core
+python-dotenv==1.0.0
+requests==2.31.0
+
+# Web scraping (for initial blog scraping)
+beautifulsoup4==4.12.3
+
+# AI - Claude API
+anthropic>=0.39.0
+
+# Web UI
+streamlit>=1.40.0
