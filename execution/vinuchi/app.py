@@ -421,13 +421,14 @@ st.markdown("""
         font-size: 14px !important;
     }
 
-    /* Quick Topics buttons - better spacing for truncated text */
+    /* Quick Topics buttons - centered text with equal padding */
     section[data-testid="stSidebar"] [data-testid="stButton"] button {
-        padding: 12px 20px !important;
+        padding: 12px 24px !important;
+        text-align: center !important;
+        justify-content: center !important;
         text-overflow: ellipsis !important;
         overflow: hidden !important;
         white-space: nowrap !important;
-        letter-spacing: 0.01em !important;
     }
 </style>
 """, unsafe_allow_html=True)
