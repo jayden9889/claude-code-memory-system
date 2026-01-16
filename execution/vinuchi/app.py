@@ -448,23 +448,41 @@ st.markdown("""
         color: #e2e8f0 !important;
     }
 
-    /* Apply button - fix centering and sizing */
+    /* Apply button - center content properly */
+    .apply-btn {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
     .apply-btn button {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        padding: 8px 12px !important;
+        text-align: center !important;
+        padding: 8px 16px !important;
         font-size: 13px !important;
         min-height: 38px !important;
     }
+    .apply-btn button p,
+    .apply-btn button span,
+    .apply-btn button div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        width: 100% !important;
+    }
 
-    /* Regenerate button - fix text overflow */
+    /* Regenerate button - make button fit the text */
+    .regenerate-btn {
+        min-width: 120px !important;
+    }
     .regenerate-btn button {
-        font-size: 12px !important;
-        padding: 8px 10px !important;
+        font-size: 11px !important;
+        padding: 8px 6px !important;
         white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        min-width: 100% !important;
+        letter-spacing: -0.3px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1047,7 +1065,7 @@ def render_main_content():
             st.markdown("##### ✏️ Tweak This Blog Using AI")
             st.caption("Make a specific change without regenerating the whole blog")
 
-            tweak_col1, tweak_col2 = st.columns([3, 1])
+            tweak_col1, tweak_col2 = st.columns([3, 1.3])
 
             with tweak_col1:
                 tweak_instruction = st.text_input(
@@ -1086,8 +1104,8 @@ def render_main_content():
 
             st.markdown("---")
 
-            # Action buttons
-            col_a, col_b, col_c = st.columns(3)
+            # Action buttons - give Regenerate more width since it has longer text
+            col_a, col_b, col_c = st.columns([1.4, 1, 1])
 
             with col_a:
                 st.markdown('<div class="regenerate-btn">', unsafe_allow_html=True)
