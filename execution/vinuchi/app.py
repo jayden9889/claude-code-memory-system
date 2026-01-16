@@ -315,6 +315,36 @@ st.markdown("""
         background: #1a202c;
     }
 
+    /* Sidebar text visibility - ensure all text is visible on dark background */
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] h4,
+    section[data-testid="stSidebar"] h5,
+    section[data-testid="stSidebar"] h6,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
+        color: #e2e8f0 !important;
+    }
+
+    /* Sidebar captions - slightly muted but still visible */
+    section[data-testid="stSidebar"] .stCaption,
+    section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        color: #a0aec0 !important;
+    }
+
+    /* Sidebar section headers - bright white for emphasis */
+    section[data-testid="stSidebar"] .stMarkdown h5,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h5 {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }
+
     /* Blog display area */
     .blog-content {
         background: #2d3748;
