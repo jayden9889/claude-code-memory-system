@@ -488,8 +488,6 @@ def init_session_state():
         st.session_state.pending_quick_topic = None
     if 'quick_topic_source' not in st.session_state:
         st.session_state.quick_topic_source = None  # Tracks if current blog came from a quick topic
-    if 'copy_blog_trigger' not in st.session_state:
-        st.session_state.copy_blog_trigger = False
     if 'clear_topic_next_render' not in st.session_state:
         st.session_state.clear_topic_next_render = False
     if 'sidebar_visible' not in st.session_state:
@@ -1282,13 +1280,22 @@ def render_blog_viewer():
 
         st.markdown("")
 
-        # Copy and Edit buttons side by side (both native Streamlit buttons)
+        # Copy and Edit buttons side by side
         col_copy, col_edit = st.columns(2)
 
+        # Format blog for copying
+        formatted_blog = format_blog_for_copy(blog['title'], blog['content'])
+
         with col_copy:
-            if st.button("📋 Copy Blog", key="copy_blog_btn", use_container_width=True):
-                st.session_state.copy_blog_trigger = True
-                st.rerun()
+            # Use download button - 100% reliable way to get text to user
+            st.download_button(
+                label="📋 Download Blog",
+                data=formatted_blog,
+                file_name=f"{blog['title'][:30].replace(' ', '_')}.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_blog_btn"
+            )
 
         with col_edit:
             if st.button("✏️ Edit Blog", key="edit_blog_btn", use_container_width=True):
@@ -1298,74 +1305,16 @@ def render_blog_viewer():
                 st.session_state.edit_content_input = blog['content']
                 st.rerun()
 
-        # Handle copy action with reliable clipboard solution
-        if st.session_state.get('copy_blog_trigger'):
-            formatted_blog = format_blog_for_copy(blog['title'], blog['content'])
-            # Escape for JavaScript string - handle all special characters
-            escaped_blog = (formatted_blog
-                .replace('\\', '\\\\')
-                .replace("'", "\\'")
-                .replace('\n', '\\n')
-                .replace('\r', '\\r')
-                .replace('\t', '\\t'))
-            import streamlit.components.v1 as components
-            # Use a more reliable clipboard approach with textarea fallback
-            components.html(f"""
-            <div id="copy-container" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: #1a202c; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-                <p style="color: #e2e8f0; margin: 0 0 10px 0; font-family: sans-serif;">Click to copy blog:</p>
-                <button id="copy-btn" style="background: #38a169; color: white; border: none; padding: 10px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; font-family: sans-serif;">📋 Copy to Clipboard</button>
-                <button id="close-btn" style="background: #4a5568; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-left: 10px; font-family: sans-serif;">Close</button>
-                <p id="status" style="color: #68d391; margin: 10px 0 0 0; font-family: sans-serif; display: none;">✓ Copied!</p>
-            </div>
-            <textarea id="copy-text" style="position: absolute; left: -9999px;">{escaped_blog}</textarea>
-            <script>
-                const text = '{escaped_blog}';
-                const container = document.getElementById('copy-container');
-                const copyBtn = document.getElementById('copy-btn');
-                const closeBtn = document.getElementById('close-btn');
-                const status = document.getElementById('status');
-                const textarea = document.getElementById('copy-text');
-
-                function copyToClipboard() {{
-                    // Try modern clipboard API first
-                    if (navigator.clipboard && navigator.clipboard.writeText) {{
-                        navigator.clipboard.writeText(text).then(() => {{
-                            status.style.display = 'block';
-                            copyBtn.textContent = '✓ Copied!';
-                            copyBtn.style.background = '#2d7a4e';
-                            setTimeout(() => container.style.display = 'none', 1000);
-                        }}).catch(() => {{
-                            // Fallback to textarea method
-                            fallbackCopy();
-                        }});
-                    }} else {{
-                        fallbackCopy();
-                    }}
-                }}
-
-                function fallbackCopy() {{
-                    textarea.style.left = '0';
-                    textarea.select();
-                    textarea.setSelectionRange(0, 99999);
-                    try {{
-                        document.execCommand('copy');
-                        status.style.display = 'block';
-                        copyBtn.textContent = '✓ Copied!';
-                        copyBtn.style.background = '#2d7a4e';
-                        setTimeout(() => container.style.display = 'none', 1000);
-                    }} catch (err) {{
-                        status.textContent = '❌ Copy failed - please select and copy manually';
-                        status.style.color = '#fc8181';
-                        status.style.display = 'block';
-                    }}
-                    textarea.style.left = '-9999px';
-                }}
-
-                copyBtn.addEventListener('click', copyToClipboard);
-                closeBtn.addEventListener('click', () => container.style.display = 'none');
-            </script>
-            """, height=150)
-            st.session_state.copy_blog_trigger = False
+        # Show copyable text area - user can select all and copy
+        with st.expander("📋 Copy Blog Text", expanded=False):
+            st.text_area(
+                "Select all and copy (Ctrl+A, Ctrl+C)",
+                value=formatted_blog,
+                height=300,
+                key="copy_text_area",
+                label_visibility="collapsed"
+            )
+            st.caption("Select all text above and press Ctrl+C (or Cmd+C on Mac) to copy")
 
 
 def render_approved_blogs():
