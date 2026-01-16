@@ -145,7 +145,7 @@ REQUIREMENTS:
 2. Include at least 1-2 school-related topics (schools are key customers)
 3. Consider current season/timing for relevance
 4. Mix of educational, trend-focused, and product-focused topics
-5. Topics should inspire a 450-500 word blog post
+5. Topics should inspire a 550-590 word blog post
 6. Make topics feel fresh and timely, not evergreen/generic
 
 GOOD EXAMPLES:
@@ -276,7 +276,7 @@ Generate ONE NEW topic that:
 1. Uses the SAME main SEO keyword/concept (e.g., if it was about "school ties", the new topic should also be about school ties)
 2. Takes a COMPLETELY DIFFERENT angle or aspect
 3. Is specific and actionable (not generic)
-4. Would make a good 450-500 word blog post
+4. Would make a good 550-590 word blog post
 
 EXAMPLES of good variations:
 - Original: "The different materials used in school ties"

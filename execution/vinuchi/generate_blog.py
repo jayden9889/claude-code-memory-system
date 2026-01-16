@@ -381,6 +381,10 @@ The owner wants these keywords used when relevant. Look for natural ways to incl
 blogs. Your output MUST sound like it was written by the same person. Any user
 preferences in the system prompt are minor tweaks - they do NOT override this voice.
 
+⚠️ IMPORTANT LENGTH NOTE: The example blogs above are ~450-500 words, but YOUR blog
+MUST BE 550-590 WORDS. Match the STYLE and TONE exactly, but write LONGER and more
+thoroughly. Add more detail, more examples, more exploration of the topic.
+
 ################################################################################
 
 """
