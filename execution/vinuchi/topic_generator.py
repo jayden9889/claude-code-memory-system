@@ -2,7 +2,12 @@
 """
 Smart Topic Generator for Vinuchi Blog Writer
 Generates relevant, varied topics based on Vinuchi's themes and industry.
-Topics refresh when the 12-hour usage window resets.
+
+TOPIC SOURCES:
+1. AI-generated topics (fresh daily, based on trends and seasons)
+2. Curated topics (fallback, organized by theme)
+
+The system prioritizes AI-generated topics for freshness, with curated topics as backup.
 """
 
 import json
@@ -13,9 +18,26 @@ from datetime import datetime
 # Storage path
 BASE_DIR = Path(__file__).parent.parent.parent
 TOPICS_FILE = BASE_DIR / ".tmp" / "vinuchi" / "generated_topics.json"
+USED_TOPICS_FILE = BASE_DIR / ".tmp" / "vinuchi" / "used_topics.json"
+
+# Flag to track if we should use AI topics (can be disabled if API issues)
+USE_AI_TOPICS = True
 
 # Vinuchi's core themes and product categories
+# NOTE: "school" is a PRIORITY theme - always include at least one school topic
 THEMES = {
+    "school": [
+        "Why every school needs a custom school tie",
+        "The role of matric ties in school heritage",
+        "Old boys ties and the connection to alumni",
+        "Preserving school traditions through custom ties",
+        "School scarves as part of winter uniform",
+        "How school ties build student pride and identity",
+        "Designing the perfect school tie for your institution",
+        "Matric farewell accessories and commemorative ties",
+        "Private schools and the tradition of custom ties",
+        "School colours and what they mean in tie design",
+    ],
     "belonging": [
         "The psychology of belonging through wearing custom ties",
         "How corporate ties create team unity",
@@ -24,11 +46,11 @@ THEMES = {
         "Creating identity through corporate scarves",
     ],
     "tradition": [
-        "Preserving school traditions through custom ties",
-        "The role of matric ties in school heritage",
-        "Old boys ties and the connection to alumni",
         "How traditions are carried through corporate uniforms",
         "The timeless appeal of woven ties",
+        "Club ties and the sense of membership they create",
+        "Why organisations value custom accessories",
+        "Building legacy through branded uniform pieces",
     ],
     "history": [
         "From Croatian soldiers to modern ties - a journey",
@@ -108,41 +130,140 @@ def _save_topics(window_id: str, topics: list):
         json.dump({"window_id": window_id, "topics": topics}, f, indent=2)
 
 
-def generate_fresh_topics(count: int = 4) -> list:
+def load_used_topics() -> list:
+    """Load list of topics that have been used AND approved (permanently excluded until reset)."""
+    if USED_TOPICS_FILE.exists():
+        try:
+            with open(USED_TOPICS_FILE, 'r') as f:
+                data = json.load(f)
+                return data.get("used_topics", [])
+        except (json.JSONDecodeError, FileNotFoundError):
+            pass
+    return []
+
+
+def save_used_topic(topic: str):
+    """Add a topic to the used topics list (called when a blog is approved)."""
+    used_topics = load_used_topics()
+    # Normalize and check if already saved
+    topic_lower = topic.lower().strip()
+    existing_lower = [t.lower() for t in used_topics]
+    if topic_lower not in existing_lower:
+        used_topics.append(topic)
+        USED_TOPICS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(USED_TOPICS_FILE, 'w') as f:
+            json.dump({"used_topics": used_topics}, f, indent=2)
+
+
+def clear_used_topics():
+    """Clear all used topics and AI-generated topics (called on system reset)."""
+    if USED_TOPICS_FILE.exists():
+        USED_TOPICS_FILE.unlink()
+
+    # Also clear AI-generated topics
+    try:
+        from ai_topic_generator import clear_ai_topics
+        clear_ai_topics()
+    except Exception as e:
+        print(f"Could not clear AI topics: {e}")
+
+
+def generate_fresh_topics(count: int = 4, exclude_topics: list = None) -> list:
     """
-    Generate fresh, varied topics from different themes.
-    Ensures no two topics are from the same theme.
+    Generate fresh, varied topics mixing AI-generated and curated topics.
+
+    STRATEGY:
+    1. Try to get 2-3 AI-generated topics (fresh, trending)
+    2. Always include 1 school topic (curated - schools are key to Vinuchi)
+    3. Fill remaining with curated topics from other themes
+
+    Excludes any topics in the exclude list AND any permanently used topics.
     """
-    # Pick random themes (without replacement)
-    available_themes = list(THEMES.keys())
-    random.shuffle(available_themes)
-    selected_themes = available_themes[:count]
+    # Build exclusion set from both explicit excludes and used topics
+    exclude_topics = exclude_topics or []
+    used_topics = load_used_topics()
+    all_excluded = set(t.lower() for t in exclude_topics + used_topics)
 
     topics = []
-    for theme in selected_themes:
-        topic = random.choice(THEMES[theme])
-        topics.append(topic)
+
+    # STEP 1: Try to get AI-generated topics (2-3 fresh topics)
+    ai_topics_to_get = min(count - 1, 3)  # Leave room for at least 1 curated school topic
+
+    if USE_AI_TOPICS:
+        try:
+            from ai_topic_generator import get_fresh_ai_topics
+            ai_topics = get_fresh_ai_topics(ai_topics_to_get + 2)  # Get extras in case some are excluded
+
+            # Filter out excluded topics
+            for topic in ai_topics:
+                if len(topics) >= ai_topics_to_get:
+                    break
+                if topic.lower() not in all_excluded:
+                    topics.append(topic)
+                    all_excluded.add(topic.lower())
+
+        except Exception as e:
+            print(f"AI topic generation failed, using curated topics: {e}")
+
+    # STEP 2: Always include at least 1 school topic (curated)
+    if not any('school' in t.lower() or 'matric' in t.lower() for t in topics):
+        school_topics = [t for t in THEMES.get("school", []) if t.lower() not in all_excluded]
+        if school_topics:
+            school_topic = random.choice(school_topics)
+            topics.append(school_topic)
+            all_excluded.add(school_topic.lower())
+
+    # STEP 3: Fill remaining slots with curated topics from various themes
+    available_themes = [t for t in THEMES.keys() if t != "school"]
+    random.shuffle(available_themes)
+
+    for theme in available_themes:
+        if len(topics) >= count:
+            break
+
+        theme_topics = [t for t in THEMES[theme] if t.lower() not in all_excluded]
+        if theme_topics:
+            topic = random.choice(theme_topics)
+            topics.append(topic)
+            all_excluded.add(topic.lower())
+
+    # STEP 4: If still need more, pick from any curated theme
+    if len(topics) < count:
+        all_remaining = []
+        for theme_topics in THEMES.values():
+            for t in theme_topics:
+                if t.lower() not in all_excluded:
+                    all_remaining.append(t)
+        random.shuffle(all_remaining)
+        topics.extend(all_remaining[:count - len(topics)])
+
+    # Shuffle the final list for variety
+    random.shuffle(topics)
 
     return topics
 
 
-def get_quick_topics(count: int = 4) -> list:
+def get_quick_topics(count: int = 4, force_fresh: bool = True) -> list:
     """
     Get quick topics for the UI.
-    Returns cached topics if still in the same 12-hour window,
-    otherwise generates fresh topics.
+    By default, always generates fresh topics on each call (topics reset on app open).
+    Excludes any topics that have been used AND approved.
+
+    Args:
+        count: Number of topics to return
+        force_fresh: If True (default), always generate new topics. If False, use cache.
     """
     current_window = _get_window_id()
-    cached = _load_cached_topics()
 
-    # Check if we have valid cached topics for this window
-    if cached.get("window_id") == current_window and cached.get("topics"):
-        topics = cached["topics"]
-        # If we have enough topics, return them
-        if len(topics) >= count:
-            return topics[:count]
+    if not force_fresh:
+        # Only use cache if explicitly requested
+        cached = _load_cached_topics()
+        if cached.get("window_id") == current_window and cached.get("topics"):
+            topics = cached["topics"]
+            if len(topics) >= count:
+                return topics[:count]
 
-    # Generate fresh topics
+    # Generate fresh topics (excluding used ones)
     topics = generate_fresh_topics(count)
     _save_topics(current_window, topics)
 
@@ -155,6 +276,31 @@ def refresh_topics(count: int = 4) -> list:
     current_window = _get_window_id()
     _save_topics(current_window, topics)
     return topics
+
+
+def get_single_fresh_topic(exclude_topics: list = None) -> str:
+    """
+    Get a single fresh topic that's not in the exclude list.
+    Used when replacing a used quick topic.
+    Also excludes any permanently used (approved) topics.
+    """
+    exclude_topics = exclude_topics or []
+    used_topics = load_used_topics()
+    exclude_set = set(t.lower() for t in exclude_topics + used_topics)
+
+    # Try to find a topic from a random theme that's not in exclude list
+    all_topics = []
+    for theme_topics in THEMES.values():
+        all_topics.extend(theme_topics)
+
+    # Shuffle and find one that's not excluded
+    random.shuffle(all_topics)
+    for topic in all_topics:
+        if topic.lower() not in exclude_set:
+            return topic
+
+    # Fallback: just pick a random one (shouldn't happen normally)
+    return random.choice(all_topics)
 
 
 if __name__ == "__main__":

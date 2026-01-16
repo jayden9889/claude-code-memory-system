@@ -1,7 +1,7 @@
 ================================================================================
 VINUCHI BLOG WRITER - PROMPT LOG
 ================================================================================
-Last Updated: January 2026
+Last Updated: January 16, 2026 (Added password protection & Streamlit Cloud support)
 Purpose: Backup of all system prompts and brand directives used in this project
 
 MAINTENANCE NOTE: This file MUST be updated whenever ANY system prompt, brand
@@ -68,6 +68,26 @@ Pattern: Weave keywords naturally into flowing sentences - never stuff them arti
 - Jump straight into the topic - no generic intros
 - End with emphatic statement or trailing thought
 - NEVER be brief or punchy - be expansive and conversational
+
+### PILLAR 7: GRAMMAR & SPELLING CORRECTNESS (CRITICAL)
+**NOTE:** The original Vinuchi blogs contain some grammar errors (they were written manually).
+YOU MUST NOT REPLICATE THESE ERRORS. Match the STYLE but use CORRECT GRAMMAR.
+
+GRAMMAR RULES:
+- Use consistent first person throughout (don't switch between "I" and "we" mid-paragraph)
+- Ensure subject-verb agreement (singular subjects take singular verbs)
+- Use correct plural/singular forms ("tie" vs "ties" - match the noun to the context)
+- Keep verb tenses consistent within paragraphs
+- Proper pronoun agreement (don't switch between "you", "one", "they" randomly)
+
+SPELLING:
+- Use British spellings as specified (colour, honour) - these are INTENTIONAL
+- But fix any actual spelling mistakes - the reference blogs may have typos
+- "aswell" and "thankyou" are Vinuchi's signature spellings - KEEP these
+- All other words should be spelled correctly
+
+The goal: Sound like Vinuchi, but polished. Match the voice and style perfectly,
+but write like a professional would - with correct grammar and consistent language.
 
 ################################################################################
 #                         END OF GROUND TRUTH                                  #
@@ -181,7 +201,15 @@ Sent as: User message (not system prompt)
 
 --- USER PROMPT TEMPLATE START ---
 
-Write a new blog post about: [TOPIC]
+################################################################################
+#                    USER'S REQUESTED TOPIC (MUST FOLLOW THIS)                 #
+################################################################################
+
+Write a new blog post about: **[TOPIC]**
+
+IMPORTANT: This blog MUST be specifically about "[TOPIC]".
+Do NOT write about a different topic. The entire blog content should directly
+address and explore this specific subject matter.
 
 ## SEO KEYWORDS TO USE IN THIS BLOG
 The owner wants these keywords used when relevant. Look for natural ways to include:
@@ -211,6 +239,7 @@ preferences in the system prompt are minor tweaks - they do NOT override this vo
 - ...
 
 ## REQUIREMENTS:
+- **TOPIC: Write specifically about "[TOPIC]"** - this is the user's chosen topic, follow it closely
 - **HARD LIMIT: MAXIMUM 500 WORDS** - Do NOT exceed this. Aim for 450-490 words.
 - Match the conversational, meandering style of the examples ABOVE
 - Your voice must be INDISTINGUISHABLE from the original blog samples
@@ -220,7 +249,7 @@ preferences in the system prompt are minor tweaks - they do NOT override this vo
 - NO bullet points - use flowing prose only
 - Make it engaging and passionate
 
-Write the complete blog now (under 500 words), starting with the title in CAPS:
+Write the complete blog now about "[TOPIC]" (under 500 words), starting with the title in CAPS:
 
 --- USER PROMPT TEMPLATE END ---
 
@@ -318,9 +347,9 @@ SECTION 7: BRAND ANCHOR HIERARCHY
 This is the conceptual hierarchy that prevents AI drift:
 
 Priority 1: BRAND IDENTITY GROUND TRUTH (Immutable)
-   - The 6 core pillars hard-coded in _build_system_prompt()
+   - The 7 core pillars hard-coded in _build_system_prompt()
    - Can NEVER be changed by user feedback
-   - First-person voice, SA identity, expertise, structure
+   - First-person voice, SA identity, expertise, structure, grammar correctness
 
 Priority 2: ORIGINAL BLOG SAMPLES
    - 235+ scraped blogs from vinuchi.co.za
@@ -357,15 +386,122 @@ Similarity (DISABLED per user request):
 - SIMILARITY_THRESHOLD = 0.6 (60% - currently not enforced)
 
 ================================================================================
-SECTION 9: TOPIC GENERATOR PROMPTS
+SECTION 9: TOPIC GENERATOR SYSTEM
 ================================================================================
 
 Location: topic_generator.py
 Used for: Quick topic suggestions in UI
 
 The topic generator uses a predefined list of industry-relevant topics
-categorized by theme (traditions, events, products, business, seasonal).
-No AI prompt - just random selection from curated list.
+categorized by theme (school, belonging, tradition, history, manufacturing, branding,
+occasions, products, insights). No AI prompt - just random selection from curated list.
+
+PRIORITY: The "school" theme is prioritized - every batch of quick topics will
+include at least one school-related topic, as schools are a key part of Vinuchi's brand.
+
+### AI Topic Generation (NEW)
+
+Location: ai_topic_generator.py
+Model: claude-sonnet-4-20250514
+Purpose: Generate fresh, trending topics daily
+
+The system now uses AI to generate new topic ideas based on:
+- Current season (Southern Hemisphere calendar)
+- Corporate fashion trends
+- School calendar (SA academic year Jan-Dec)
+- Existing approved blogs (to avoid repetition)
+
+AI generates 5 new topics per day, stored in .tmp/vinuchi/ai_generated_topics.json
+Topics mix: 2-3 AI-generated + 1 school (curated) + remaining curated
+
+### Topic Tracking System
+
+Used Topics File: .tmp/vinuchi/used_topics.json
+Purpose: Permanently exclude topics that have been used AND approved
+
+Key Functions:
+- `get_quick_topics(count, force_fresh)` - Returns fresh topics each app open
+- `generate_fresh_topics(count, exclude_topics)` - Excludes used topics from selection
+- `get_single_fresh_topic(exclude_topics)` - Replaces clicked quick topic
+- `load_used_topics()` - Load permanently excluded topics
+- `save_used_topic(topic)` - Mark topic as used (called on blog approval)
+- `clear_used_topics()` - Reset used topics (called on system reset)
+
+Flow:
+1. User clicks quick topic → topic populates text box
+2. User clicks Generate → quick_topic_source tracks the origin
+3. User clicks Approve → topic saved to used_topics.json + related topic generated
+4. Future topic generation excludes all used topics
+5. System Reset clears used_topics.json (all topics available again)
+
+### Related Topic Generation (NEW)
+
+Location: ai_topic_generator.py -> generate_related_topic()
+Model: claude-sonnet-4-20250514
+Purpose: When a topic is approved, generate a NEW topic with same SEO keyword but different angle
+
+--- RELATED TOPIC PROMPT START ---
+
+You are a content strategist for Vinuchi, a South African custom tie and scarf manufacturer.
+
+A blog was just written about: "[USED_TOPIC]"
+
+Generate ONE NEW topic that:
+1. Uses the SAME main SEO keyword/concept (e.g., if it was about "school ties", the new topic should also be about school ties)
+2. Takes a COMPLETELY DIFFERENT angle or aspect
+3. Is specific and actionable (not generic)
+4. Would make a good 450-500 word blog post
+
+EXAMPLES of good variations:
+- Original: "The different materials used in school ties"
+- New: "How to choose the right colours for your school tie"
+- Next: "Adding your school crest to a custom tie"
+- Next: "Why woven school ties last longer than printed ones"
+
+The key is: SAME core topic (school ties, corporate ties, scarves, etc.) but DIFFERENT angle.
+
+Return ONLY the new topic, nothing else. No explanation, no quotes, just the topic.
+
+--- RELATED TOPIC PROMPT END ---
+
+Flow:
+1. User approves blog that came from a quick topic
+2. System marks exact topic as permanently used
+3. System calls generate_related_topic() with the used topic
+4. AI generates a new topic with same SEO keyword, different angle
+5. New topic added to AI topics pool for future quick topics
+
+================================================================================
+SECTION 10: AUTHENTICATION SYSTEM
+================================================================================
+
+Location: app.py -> check_password()
+Used when: App loads (before any other content)
+No AI involved - simple password comparison
+
+--- AUTHENTICATION FLOW ---
+
+1. App checks for APP_PASSWORD in secrets (Streamlit Cloud) or .env (local)
+2. If no password is set, authentication is bypassed (for development)
+3. If password is set, user sees login screen
+4. User enters password → compared against stored password
+5. If match, session_state["authenticated"] = True and app proceeds
+6. If no match, error message shown
+
+--- SECRETS PRIORITY ORDER ---
+
+1. Streamlit Cloud st.secrets (for deployed apps)
+2. Local .env file via python-dotenv (for development)
+
+The get_secret() helper function checks both sources in this order.
+
+--- ENVIRONMENT VARIABLES ---
+
+Required:
+- ANTHROPIC_API_KEY: Claude API key for blog generation
+
+Optional:
+- APP_PASSWORD: Password to access the app (leave empty to disable)
 
 ================================================================================
 END OF PROMPT LOG

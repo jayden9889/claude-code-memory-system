@@ -73,8 +73,14 @@ beautifulsoup4==4.12.3    # Web scraping
 Create a `.env` file in the project root:
 
 ```bash
-# Create the file
+# macOS/Linux
 touch .env
+
+# Windows (PowerShell)
+New-Item .env -ItemType File
+
+# Windows (Command Prompt)
+type nul > .env
 ```
 
 Add these variables (replace with your actual values):
@@ -82,6 +88,10 @@ Add these variables (replace with your actual values):
 ```env
 # REQUIRED - Claude API
 ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxx
+
+# PASSWORD PROTECTION (optional but recommended)
+# Leave empty or remove to disable password login
+APP_PASSWORD=your-secure-password
 
 # OPTIONAL - Only if using Supabase for cloud storage
 SUPABASE_URL=https://xxxxx.supabase.co
@@ -110,8 +120,14 @@ INSTANTLY_API_KEY=your-instantly-key
 The system needs a `.tmp/vinuchi/` folder for data storage:
 
 ```bash
-# Create the directory
+# macOS/Linux
 mkdir -p .tmp/vinuchi
+
+# Windows (PowerShell)
+New-Item -ItemType Directory -Force -Path .tmp\vinuchi
+
+# Windows (Command Prompt)
+mkdir .tmp\vinuchi
 ```
 
 If restoring from backup, copy these files:
@@ -120,7 +136,9 @@ If restoring from backup, copy these files:
 ├── scraped_blogs.json         # Original Vinuchi blogs (CRITICAL)
 ├── deep_style_analysis.json   # Style patterns extracted
 ├── persistent_memory.json     # Rules and preferences
-└── usage_tracking.json        # API usage (can be empty)
+├── usage_tracking.json        # API usage (can be empty)
+├── ai_generated_topics.json   # AI-generated trending topics (optional - regenerates)
+└── used_topics.json           # Used topics tracking (optional - regenerates)
 ```
 
 **If you don't have scraped_blogs.json**, you'll need to re-scrape:
@@ -154,10 +172,11 @@ Open http://localhost:8501 in your browser.
 
 ## Step 6: Verify Everything Works
 
-1. **Check the UI loads** - You should see "Vinuchi Blog Writer" header
-2. **Try generating a blog** - Enter any topic, click Generate
-3. **Check SEO keywords section** - Should be visible in sidebar
-4. **Check usage counter** - Should show "X/10 posts remaining"
+1. **Check the UI loads** - You should see "Vinuchi Blog Writer" login screen
+2. **Enter password** - If APP_PASSWORD is set, enter it to access the app
+3. **Try generating a blog** - Enter any topic, click Generate
+4. **Check SEO keywords section** - Should be visible in sidebar
+5. **Check usage counter** - Should show "X/10 posts remaining"
 
 If any step fails, check:
 - Is ANTHROPIC_API_KEY set correctly in .env?
@@ -166,7 +185,103 @@ If any step fails, check:
 
 ---
 
-## Step 7: Optional - Run as Background Service
+## Streamlit Cloud Deployment (RECOMMENDED)
+
+**This is the recommended way to deploy the app for remote users.**
+
+Streamlit Cloud is a free hosting service that:
+- Runs your app 24/7 on the internet
+- Auto-deploys when you push changes to GitHub
+- Handles all server infrastructure for you
+
+### Prerequisites
+
+1. A GitHub account (free)
+2. Your code pushed to a GitHub repository
+3. An Anthropic API key
+
+### Step 1: Push to GitHub
+
+If not already done, push your code to GitHub:
+
+```bash
+# Initialize git (if not done)
+git init
+
+# Add files (excluding sensitive data)
+git add .
+
+# Commit
+git commit -m "Initial commit"
+
+# Add remote (replace with your repo URL)
+git remote add origin https://github.com/YOUR-USERNAME/vinuchi-blog-writer.git
+
+# Push
+git push -u origin main
+```
+
+**IMPORTANT:** Make sure `.env` is in your `.gitignore` file! API keys should NEVER be in GitHub.
+
+### Step 2: Connect to Streamlit Cloud
+
+1. Go to https://share.streamlit.io/
+2. Sign in with your GitHub account
+3. Click "New app"
+4. Select your repository
+5. Set the main file path: `execution/vinuchi/app.py`
+6. Click "Deploy"
+
+### Step 3: Configure Secrets
+
+After deploying, you need to add your API keys:
+
+1. In Streamlit Cloud, click on your app
+2. Click **Settings** (gear icon) → **Secrets**
+3. Add your secrets in TOML format:
+
+```toml
+# REQUIRED
+ANTHROPIC_API_KEY = "sk-ant-api03-your-key-here"
+
+# PASSWORD PROTECTION (recommended)
+APP_PASSWORD = "your-secure-password"
+```
+
+4. Click "Save"
+5. The app will restart with the new secrets
+
+### Step 4: Share the URL
+
+Your app is now live! Share the URL with your client:
+- URL format: `https://your-app-name.streamlit.app`
+
+The client will see a login screen and need to enter the password you set.
+
+### Updating the App
+
+To push updates to your client's version:
+
+1. Make changes in your code locally
+2. Run these commands:
+   ```bash
+   git add .
+   git commit -m "Description of changes"
+   git push
+   ```
+3. Streamlit Cloud automatically redeploys within ~1-2 minutes
+4. Your client sees the updates by refreshing their browser
+
+### Important Notes
+
+- **Free tier limits:** 1GB of memory, apps may sleep after 7 days of inactivity
+- **Data persistence:** `.tmp/` files are temporary on Streamlit Cloud - they reset when the app restarts
+- **For persistent data:** Use Supabase or another cloud database (see main README)
+- **Custom domain:** Available on paid plans
+
+---
+
+## Step 7: Optional - Run as Background Service (Local)
 
 ### macOS (launchd)
 
@@ -225,6 +340,25 @@ sudo systemctl enable vinuchi-blog
 sudo systemctl start vinuchi-blog
 ```
 
+### Windows (Task Scheduler)
+
+1. Open **Task Scheduler** (search for it in Start menu)
+2. Click **Create Basic Task**
+3. Name: "Vinuchi Blog Writer"
+4. Trigger: **When the computer starts**
+5. Action: **Start a program**
+6. Program: `C:\path\to\python.exe` (or `streamlit.exe` if in PATH)
+7. Arguments: `-m streamlit run app.py`
+8. Start in: `C:\path\to\execution\vinuchi`
+9. Finish
+
+Or create a simple batch file `start-vinuchi.bat`:
+```batch
+@echo off
+cd /d "C:\path\to\execution\vinuchi"
+streamlit run app.py
+```
+
 ---
 
 ## Troubleshooting
@@ -251,8 +385,15 @@ python usage_limiter.py reset
 ### Problem: App crashes on start
 **Solution:** Kill any existing instances and restart:
 ```bash
+# macOS/Linux
 pkill -f "streamlit run"
 streamlit run app.py
+
+# Windows (PowerShell)
+Get-Process | Where-Object {$_.ProcessName -like "*streamlit*"} | Stop-Process
+streamlit run app.py
+
+# Windows - Alternative: Use Task Manager to end Python/Streamlit processes
 ```
 
 ### Problem: Changes not appearing after code edit
@@ -277,31 +418,40 @@ streamlit run app.py
 ### What Can Be Regenerated
 
 - `usage_tracking.json` - Just tracks API calls
+- `ai_generated_topics.json` - AI generates fresh topics daily
+- `used_topics.json` - Tracks approved topics (cleared on reset anyway)
 - Any `__pycache__` folders
 
 ### Backup Command
 
 ```bash
-# Create dated backup
+# macOS/Linux
 tar -czvf vinuchi-backup-$(date +%Y%m%d).tar.gz \
     .env \
     .tmp/vinuchi/ \
     execution/vinuchi/ \
     directives/vinuchi_blog_writer.md
+
+# Windows (PowerShell) - Windows 10+ has tar built-in
+$date = Get-Date -Format "yyyyMMdd"
+tar -czvf "vinuchi-backup-$date.tar.gz" .env .tmp\vinuchi\ execution\vinuchi\ directives\vinuchi_blog_writer.md
+
+# Windows - Alternative: Just copy the folders to a backup location
+# Right-click → Copy the .env, .tmp\vinuchi\, execution\vinuchi\ folders
 ```
 
 ---
 
 ## Quick Reference
 
-| Task | Command |
-|------|---------|
-| Start the app | `streamlit run app.py` |
-| Check usage | `python usage_limiter.py status` |
-| Reset usage limit | `python usage_limiter.py reset` |
-| Kill the app | `pkill -f "streamlit run"` |
-| Re-scrape blogs | `python scrape_all_blogs.py` |
-| Re-analyze style | `python analyze_style.py` |
+| Task | macOS/Linux | Windows |
+|------|-------------|---------|
+| Start the app | `streamlit run app.py` | `streamlit run app.py` |
+| Check usage | `python usage_limiter.py status` | `python usage_limiter.py status` |
+| Reset usage limit | `python usage_limiter.py reset` | `python usage_limiter.py reset` |
+| Kill the app | `pkill -f "streamlit run"` | Use Task Manager or `taskkill /IM python.exe /F` |
+| Re-scrape blogs | `python scrape_all_blogs.py` | `python scrape_all_blogs.py` |
+| Re-analyze style | `python analyze_style.py` | `python analyze_style.py` |
 
 ---
 

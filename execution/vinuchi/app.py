@@ -8,9 +8,14 @@ SECURITY ARCHITECTURE:
 This is a Streamlit application (server-side Python framework).
 - ALL API calls (Anthropic, etc.) are made from the Python server process
 - The browser receives only rendered HTML/CSS/JS - never API keys
-- Secrets are stored in .env (which is in .gitignore)
+- Secrets stored in .env (local) or st.secrets (Streamlit Cloud)
 - The frontend (browser) NEVER makes direct calls to api.anthropic.com
-- This is inherently secure for single-user deployment
+- Password protection prevents unauthorized access
+
+DEPLOYMENT:
+===========
+Local: Uses .env file for secrets
+Streamlit Cloud: Uses st.secrets (configured in app settings)
 """
 
 import streamlit as st
@@ -19,8 +24,84 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables FIRST
+# Load environment variables FIRST (for local development)
 load_dotenv()
+
+
+def get_secret(key: str, default: str = None) -> str:
+    """
+    Get a secret from either Streamlit Cloud secrets or local .env file.
+    Streamlit Cloud takes priority over .env for deployed apps.
+    """
+    # Try Streamlit Cloud secrets first (for deployed app)
+    try:
+        if hasattr(st, 'secrets') and key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+
+    # Fall back to environment variable (for local development)
+    return os.getenv(key, default)
+
+
+def check_password() -> bool:
+    """
+    Show a password login form and return True if the correct password is entered.
+    Password is stored in APP_PASSWORD secret/env variable.
+    """
+    # Check if already authenticated this session
+    if st.session_state.get("authenticated", False):
+        return True
+
+    # Get the password from secrets
+    correct_password = get_secret("APP_PASSWORD")
+
+    # If no password is set, skip authentication (for development)
+    if not correct_password:
+        return True
+
+    # Show login form
+    st.markdown("""
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            border-radius: 10px;
+            text-align: center;
+        }
+        .login-title { color: white; font-size: 1.8rem; margin-bottom: 1rem; }
+        .login-subtitle { color: #a0aec0; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    </style>
+    <div class="login-container">
+        <div class="login-title">Vinuchi Blog Writer</div>
+        <div class="login-subtitle">Please enter your password to continue</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Center the form
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+        password = st.text_input(
+            "Password",
+            type="password",
+            key="password_input",
+            placeholder="Enter password..."
+        )
+
+        if st.button("Login", use_container_width=True, type="primary"):
+            if password == correct_password:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Incorrect password. Please try again.")
+
+        st.markdown("")
+        st.caption("Contact your administrator if you've forgotten your password.")
+
+    return False
 
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -40,14 +121,21 @@ from persistent_memory import get_memory
 def _validate_environment():
     """Ensure required API keys are configured."""
     missing = []
-    if not os.getenv("ANTHROPIC_API_KEY"):
+    if not get_secret("ANTHROPIC_API_KEY"):
         missing.append("ANTHROPIC_API_KEY")
     return missing
 
+
+# ============ PASSWORD PROTECTION ============
+# Check password BEFORE loading the rest of the app
+if not check_password():
+    st.stop()
+
+# Now validate environment (only after authentication)
 _missing_env = _validate_environment()
 if _missing_env:
     st.error(f"Missing required environment variables: {', '.join(_missing_env)}")
-    st.info("Please configure these in your .env file")
+    st.info("Please configure these in your .env file or Streamlit Cloud secrets")
     st.stop()
 
 # Custom CSS
@@ -216,6 +304,11 @@ st.markdown("""
         border-color: #38a169 !important;
     }
 
+    /* Prevent button text from wrapping */
+    .stButton button {
+        white-space: nowrap !important;
+    }
+
     /* Sidebar styling */
     section[data-testid="stSidebar"] > div {
         background: #1a202c;
@@ -330,14 +423,12 @@ def init_session_state():
         st.session_state.rule_to_delete = None  # Tuple: (rule_type, rule_value)
     if 'editing_blog' not in st.session_state:
         st.session_state.editing_blog = False
-    if 'edit_title' not in st.session_state:
-        st.session_state.edit_title = ""
-    if 'edit_content' not in st.session_state:
-        st.session_state.edit_content = ""
     if 'confirm_cancel_edit' not in st.session_state:
         st.session_state.confirm_cancel_edit = False
     if 'pending_quick_topic' not in st.session_state:
         st.session_state.pending_quick_topic = None
+    if 'quick_topic_source' not in st.session_state:
+        st.session_state.quick_topic_source = None  # Tracks if current blog came from a quick topic
     if 'copy_blog_trigger' not in st.session_state:
         st.session_state.copy_blog_trigger = False
     if 'clear_topic_next_render' not in st.session_state:
@@ -597,6 +688,7 @@ def render_sidebar():
 def reset_system():
     """Reset all memory - admin only."""
     from usage_limiter import admin_reset
+    from topic_generator import clear_used_topics
 
     memory = st.session_state.memory
 
@@ -623,10 +715,17 @@ def reset_system():
     # Reset usage limit (daily posts counter)
     admin_reset()
 
+    # Clear used topics (allows all quick topics to appear again)
+    clear_used_topics()
+
     # Clear session
     st.session_state.generated_blog = None
     st.session_state.is_generating = False
     st.session_state.generation_topic = None
+    st.session_state.quick_topic_source = None
+
+    # Refresh quick topics with fresh set
+    st.session_state.quick_topics = load_quick_topics()
 
 
 def generate_blog(topic: str):
@@ -772,6 +871,10 @@ def render_main_content():
                         # Show limit error but DON'T lock UI - user can keep trying
                         st.warning(f"🚫 {limit_msg}")
                     else:
+                        # If user typed their own topic (not from quick topics), clear the source tracker
+                        if not st.session_state.pending_quick_topic:
+                            st.session_state.quick_topic_source = None
+
                         # Valid topic and under limit - store it and lock UI
                         st.session_state.generation_topic = actual_topic
                         st.session_state.is_generating = True
@@ -796,6 +899,15 @@ def render_main_content():
                 # Set pending topic (will be applied before form renders on next rerun)
                 st.session_state.pending_quick_topic = sug
                 st.session_state.show_topic_warning = False
+
+                # Track that this blog came from a quick topic (for permanent exclusion if approved)
+                st.session_state.quick_topic_source = sug
+
+                # Replace this topic with a fresh one (so user doesn't accidentally reuse it)
+                from topic_generator import get_single_fresh_topic
+                fresh_topic = get_single_fresh_topic(exclude_topics=st.session_state.quick_topics)
+                st.session_state.quick_topics[i] = fresh_topic
+
                 st.rerun()
 
         # Refresh quick topics button
@@ -810,16 +922,32 @@ def render_main_content():
         blog = st.session_state.generated_blog
 
         if blog:
-            # Word count indicator
-            word_count = blog.get('word_count', 0)
-            if word_count <= 500:
-                st.success(f"✓ {word_count} words")
-            elif word_count <= 515:
-                st.warning(f"⚠ {word_count} words (slightly over)")
-            else:
-                st.error(f"✗ {word_count} words (over limit)")
+            # Title (read-only)
+            st.markdown(f"**Title:** {blog.get('title', 'Untitled')}")
 
-            # Show any validation issues
+            # Content display - editable, use dynamic key to prevent caching issues
+            content_version = st.session_state.get('content_version', 0)
+            content_key = f"blog_content_display_{content_version}"
+            edited_content = st.text_area(
+                "Content",
+                value=blog.get('content', ''),
+                height=350,
+                key=content_key,
+                label_visibility="collapsed"
+            )
+
+            # Calculate word count from ACTUAL content in text area (live count)
+            current_word_count = len(edited_content.split()) if edited_content else 0
+
+            # Word count indicator - shows live count as user types
+            if current_word_count <= 500:
+                st.success(f"✓ {current_word_count} words")
+            elif current_word_count <= 515:
+                st.warning(f"⚠ {current_word_count} words (slightly over)")
+            else:
+                st.error(f"✗ {current_word_count} words (over limit)")
+
+            # Show any validation issues from generation
             validation = blog.get('validation', {})
             if validation.get('issues'):
                 for issue in validation['issues']:
@@ -828,36 +956,29 @@ def render_main_content():
                 for warning in validation['warnings']:
                     st.warning(warning)
 
-            # Title (read-only)
-            st.markdown(f"**Title:** {blog.get('title', 'Untitled')}")
-
-            # Content display - use dynamic key to prevent caching issues
-            content_version = st.session_state.get('content_version', 0)
-            st.text_area(
-                "Content",
-                value=blog.get('content', ''),
-                height=350,
-                key=f"blog_content_display_{content_version}",
-                label_visibility="collapsed"
-            )
+            # Track if user has made manual edits (different from original)
+            if edited_content != blog.get('content', ''):
+                # Update the blog in session state with user's edits
+                st.session_state.generated_blog['content'] = edited_content
+                st.session_state.generated_blog['word_count'] = current_word_count
 
             # ============ TWEAKER SECTION ============
             st.markdown("---")
             st.markdown("##### ✏️ Tweak This Blog Using AI")
             st.caption("Make a specific change without regenerating the whole blog")
 
-            tweak_col1, tweak_col2 = st.columns([4, 1])
+            tweak_col1, tweak_col2 = st.columns([3, 1])
 
             with tweak_col1:
                 tweak_instruction = st.text_input(
                     "Tweak instruction",
-                    placeholder="e.g., 'Replace the word Alumni with Graduates' or 'Make the last paragraph shorter'",
+                    placeholder="e.g., 'Replace Alumni with Graduates' or 'Make intro shorter'",
                     key="tweak_input",
                     label_visibility="collapsed"
                 )
 
             with tweak_col2:
-                tweak_clicked = st.button("🔧 Tweak", use_container_width=True, disabled=not tweak_instruction)
+                tweak_clicked = st.button("🔧 Apply", use_container_width=True, disabled=not tweak_instruction)
 
             if tweak_clicked and tweak_instruction:
                 with st.spinner("Applying tweak..."):
@@ -898,7 +1019,41 @@ def render_main_content():
                 if st.button("✓ Approve", use_container_width=True, type="primary"):
                     blog_id = blog.get('blog_id')
                     if blog_id:
+                        # Save any manual edits the user made before approving
+                        memory.update_blog_content(
+                            blog_id,
+                            blog.get('title', ''),
+                            blog.get('content', '')
+                        )
                         memory.update_blog_status(blog_id, "approved")
+
+                        # If this blog was generated from a quick topic, mark it as permanently used
+                        # AND generate a related topic with the same SEO concept but different angle
+                        if st.session_state.quick_topic_source:
+                            from topic_generator import save_used_topic
+                            used_topic = st.session_state.quick_topic_source
+                            save_used_topic(used_topic)
+
+                            # Generate a related topic (same SEO keyword, different angle)
+                            # e.g., "materials of school ties" → "colours of school ties"
+                            try:
+                                from ai_topic_generator import generate_related_topic, mark_ai_topic_used
+                                related_topic = generate_related_topic(used_topic)
+                                if related_topic:
+                                    # Add the related topic to the AI topics pool
+                                    from ai_topic_generator import _load_ai_topics, _save_ai_topics
+                                    data = _load_ai_topics()
+                                    topics_list = data.get("topics", [])
+                                    if related_topic not in topics_list:
+                                        topics_list.append(related_topic)
+                                        data["topics"] = topics_list[-30:]  # Keep recent 30
+                                        _save_ai_topics(data)
+                            except Exception as e:
+                                # Silently fail - related topic generation is a nice-to-have
+                                pass
+
+                            st.session_state.quick_topic_source = None
+
                         st.session_state.generated_blog = None  # Clear current
                         st.balloons()
                         st.success("Blog approved! See it in Approved Blogs below.")
@@ -977,8 +1132,11 @@ def render_blog_viewer():
                 if st.button("Yes, Cancel", key="confirm_cancel_yes", use_container_width=True, type="primary"):
                     st.session_state.editing_blog = False
                     st.session_state.confirm_cancel_edit = False
-                    st.session_state.edit_title = ""
-                    st.session_state.edit_content = ""
+                    # Clear the widget keys
+                    if 'edit_title_input' in st.session_state:
+                        del st.session_state.edit_title_input
+                    if 'edit_content_input' in st.session_state:
+                        del st.session_state.edit_content_input
                     st.rerun()
             with col_no:
                 if st.button("No, Keep Editing", key="confirm_cancel_no", use_container_width=True):
@@ -988,27 +1146,21 @@ def render_blog_viewer():
             # Edit mode UI
             st.markdown("#### ✏️ Edit Blog")
 
-            # Editable title
+            # Editable title - key manages state, initialized when entering edit mode
             edit_title = st.text_input(
                 "Title",
-                value=st.session_state.edit_title or blog['title'],
                 key="edit_title_input"
             )
 
-            # Editable content
+            # Editable content - key manages state, initialized when entering edit mode
             edit_content = st.text_area(
                 "Content",
-                value=st.session_state.edit_content or blog['content'],
                 height=400,
                 key="edit_content_input"
             )
 
-            # Update session state with current edits
-            st.session_state.edit_title = edit_title
-            st.session_state.edit_content = edit_content
-
             # Word count for edited content
-            new_word_count = len(edit_content.split())
+            new_word_count = len(edit_content.split()) if edit_content else 0
             if new_word_count <= 500:
                 st.success(f"✓ {new_word_count} words")
             elif new_word_count <= 515:
@@ -1020,15 +1172,22 @@ def render_blog_viewer():
             col_confirm, col_cancel = st.columns(2)
             with col_confirm:
                 if st.button("✓ Save Changes", key="save_edit", use_container_width=True, type="primary"):
+                    # Get values from the widget keys (Streamlit manages these)
+                    final_title = st.session_state.get('edit_title_input', blog['title'])
+                    final_content = st.session_state.get('edit_content_input', blog['content'])
+
                     # Save the changes
                     memory.update_blog_content(
                         st.session_state.viewing_blog_id,
-                        edit_title,
-                        edit_content
+                        final_title,
+                        final_content
                     )
                     st.session_state.editing_blog = False
-                    st.session_state.edit_title = ""
-                    st.session_state.edit_content = ""
+                    # Clear the widget keys
+                    if 'edit_title_input' in st.session_state:
+                        del st.session_state.edit_title_input
+                    if 'edit_content_input' in st.session_state:
+                        del st.session_state.edit_content_input
                     st.success("Changes saved!")
                     st.rerun()
             with col_cancel:
@@ -1061,8 +1220,9 @@ def render_blog_viewer():
         with col_edit:
             if st.button("✏️ Edit Blog", key="edit_blog_btn", use_container_width=True):
                 st.session_state.editing_blog = True
-                st.session_state.edit_title = blog['title']
-                st.session_state.edit_content = blog['content']
+                # Initialize the widget keys directly (Streamlit manages state via keys)
+                st.session_state.edit_title_input = blog['title']
+                st.session_state.edit_content_input = blog['content']
                 st.rerun()
 
         # Handle copy action with hidden auto-executing script

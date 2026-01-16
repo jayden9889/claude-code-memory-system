@@ -129,7 +129,7 @@ The Brand Anchor system prevents the AI from drifting away from the authentic Vi
 2. **Original Blog Samples** - Reference material from scraped vinuchi.co.za blogs
 3. **User Feedback/Preferences** - Minor tweaks only, cannot override pillars 1 or 2
 
-### The 6 Core Brand Pillars (Protected)
+### The 7 Core Brand Pillars (Protected)
 
 1. **AUTHENTIC VOICE** - First-person perspective, speaking as founder to reader
 2. **SOUTH AFRICAN IDENTITY** - SA-specific language, local references, Rand currency
@@ -137,6 +137,7 @@ The Brand Anchor system prevents the AI from drifting away from the authentic Vi
 4. **CONVERSATIONAL AUTHORITY** - Expert but approachable tone
 5. **SEO NATURAL INTEGRATION** - Keywords woven naturally, never stuffed
 6. **STRUCTURE** - 500 words max, proper formatting, compelling title
+7. **GRAMMAR CORRECTNESS** - Match the STYLE but use CORRECT grammar. The original blogs have some errors (first-person inconsistency, plural/singular mistakes) - don't replicate these. Sound like Vinuchi but polished.
 
 ### How It Works
 
@@ -185,3 +186,15 @@ This is non-negotiable. The user has no dev background and needs these files to 
 - 2026-01-15: Added loading spinner with "Writing your blog..." message during generation
 - 2026-01-15: Hidden Streamlit header toolbar (Stop, Deploy, accessibility buttons) for cleaner UI
 - 2026-01-15: Fixed quick topics bug - removed form wrapper (clear_on_submit caused state conflicts), now uses direct text_area with deferred state clearing via `clear_topic_next_render` flag
+- 2026-01-15: Added PILLAR 7 (Grammar Correctness) - AI now matches Vinuchi's style but uses correct grammar/spelling. Original blogs have some errors (first-person inconsistency, plural/singular) that the AI will NOT replicate
+- 2026-01-15: Strengthened topic guidance in prompts - topic now appears prominently at start, in requirements, and at end of prompt to ensure AI follows user's requested topic
+- 2026-01-15: Quick topics now auto-replace with fresh topic after being used (prevents duplicate generation)
+- 2026-01-15: Fixed blog editing - manual edits now save correctly when approving drafts or editing approved blogs
+- 2026-01-15: Added used topics tracking - quick topics now reset on every app open, approved topics are permanently excluded until system reset
+- 2026-01-16: Fixed word count display - now shows live count from actual text area content, updates as user types
+- 2026-01-16: Added school topic priority - every quick topics batch now includes at least one school-related topic (schools are key to Vinuchi brand)
+- 2026-01-16: Added AI-powered topic generation - quick topics now mix AI-generated trending topics with curated topics. AI generates 5 fresh topics daily based on corporate fashion trends, seasons, and Vinuchi's brand
+- 2026-01-16: Added related topic generation - when a quick topic is approved, the system generates a NEW topic with the same SEO keyword/concept but a different angle (e.g., "materials of school ties" → "colours of school ties" → "logos on school ties"). This keeps SEO momentum while avoiding duplicate content
+- 2026-01-16: Verified Windows compatibility - all code uses pathlib.Path and UTF-8 encoding. Updated REDEPLOY.md with Windows-specific commands (PowerShell, Command Prompt equivalents)
+- 2026-01-16: Added password protection - optional login screen controlled by APP_PASSWORD env variable. Works with both local .env and Streamlit Cloud st.secrets
+- 2026-01-16: Added Streamlit Cloud support - app now works on Streamlit Cloud for free remote hosting. API keys can be set in st.secrets instead of .env. Added deployment guide to REDEPLOY.md

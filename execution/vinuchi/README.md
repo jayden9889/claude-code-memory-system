@@ -1,6 +1,6 @@
 # Vinuchi Blog Writer - Technical Documentation
 
-**Last Updated:** January 2026
+**Last Updated:** January 16, 2026
 **Purpose:** AI-powered blog writer that replicates Vinuchi's exact writing style
 
 > **MAINTENANCE NOTE:** This file MUST be updated whenever the system changes.
@@ -15,7 +15,7 @@
 pip install -r requirements.txt
 
 # 2. Set up environment variables (see REDEPLOY.md for details)
-cp .env.example .env  # Then edit with your keys
+cp .env.template .env  # Then edit with your keys
 
 # 3. Run the app
 cd execution/vinuchi
@@ -23,6 +23,25 @@ streamlit run app.py
 ```
 
 App will be available at: http://localhost:8501
+
+**Password Protection:** Set `APP_PASSWORD` in your `.env` file to require login. Leave empty to disable.
+
+**Windows Compatibility:** This app runs identically on macOS, Linux, and Windows. See REDEPLOY.md for Windows-specific setup commands.
+
+---
+
+## Deployment Options
+
+### Local Development
+Run `streamlit run app.py` and access at localhost:8501.
+
+### Streamlit Cloud (Recommended for Remote Users)
+Free hosting with auto-deploy from GitHub. See REDEPLOY.md for detailed setup instructions.
+
+1. Push code to GitHub
+2. Connect repo to share.streamlit.io
+3. Add secrets (ANTHROPIC_API_KEY, APP_PASSWORD) in Streamlit Cloud settings
+4. Share the URL with your client
 
 ---
 
@@ -71,7 +90,8 @@ LLMs are probabilistic (90% accuracy per step). 5 steps = 59% success rate.
 ├── generate_blog.py       # Core blog generation with Claude API
 ├── persistent_memory.py   # JSON-based memory for rules, blogs, preferences
 ├── usage_limiter.py       # Financial kill switch (10 posts/12 hours)
-├── topic_generator.py     # Smart topic suggestions
+├── topic_generator.py     # Smart topic suggestions (curated + AI mix)
+├── ai_topic_generator.py  # AI-powered fresh topic generation with Claude
 ├── scrape_all_blogs.py    # One-time: scrape vinuchi.co.za blogs
 ├── analyze_style.py       # One-time: extract style patterns
 ├── manage_preferences.py  # CLI for managing rules
@@ -81,10 +101,12 @@ LLMs are probabilistic (90% accuracy per step). 5 steps = 59% success rate.
 └── vinuchi_blog_writer.md # The master SOP for this system
 
 /.tmp/vinuchi/
-├── scraped_blogs.json     # 235+ original Vinuchi blogs
+├── scraped_blogs.json       # 235+ original Vinuchi blogs
 ├── deep_style_analysis.json # Extracted style patterns
-├── persistent_memory.json # All learned rules and preferences
-└── usage_tracking.json    # API usage tracking
+├── persistent_memory.json   # All learned rules and preferences
+├── usage_tracking.json      # API usage tracking
+├── ai_generated_topics.json # AI-generated trending topics (refreshed daily)
+└── used_topics.json         # Topics that have been approved (permanently excluded)
 
 /.env
 └── API keys (NEVER commit this file)
@@ -105,13 +127,14 @@ This is the core blog generator. It:
 5. **Reviews the output** for word count and duplicates
 6. **Validates against rules** (banned words, required elements)
 
-**Brand Anchor System:** Prevents AI drift by hard-coding 6 core brand pillars that can NEVER be overridden by user feedback:
+**Brand Anchor System:** Prevents AI drift by hard-coding 7 core brand pillars that can NEVER be overridden by user feedback:
 - Authentic first-person voice
 - South African identity
 - Product expertise
 - Conversational authority
 - Natural SEO integration
 - 500-word structure
+- Grammar correctness (match style but use proper grammar - original blogs have some errors)
 
 ### 2. app.py - The Interface
 
@@ -227,6 +250,53 @@ The **most important feature** for rankings:
 
 ---
 
+## Topic Generator System
+
+The Quick Topics feature helps users find relevant blog ideas:
+
+### How It Works
+
+**Two Sources of Topics:**
+1. **AI-Generated Topics** (via `ai_topic_generator.py`)
+   - Fresh topics generated daily using Claude
+   - Based on corporate fashion trends, seasons, school calendar
+   - Stored in `.tmp/vinuchi/ai_generated_topics.json`
+   - 5 new topics added each day
+
+2. **Curated Topics** (via `topic_generator.py`)
+   - Hand-crafted topics organized by theme
+   - Categories: school, belonging, tradition, history, manufacturing, branding, occasions, products, insights
+   - Used as fallback if AI generation fails
+
+**Topic Mix Strategy:**
+- 2-3 AI-generated trending topics
+- At least 1 school-related topic (schools are key customers)
+- Remaining slots filled with curated topics from various themes
+
+### School Topic Priority
+
+Schools are a significant part of Vinuchi's customer base, so:
+- Every quick topics batch includes at least one school-related topic
+- School topics cover: matric ties, old boys ties, school traditions, uniforms, etc.
+
+### Used Topics Tracking
+
+When a blog is approved from a quick topic:
+1. The exact topic is **permanently excluded** from future suggestions
+2. The system generates a **related topic** with the same SEO keyword but different angle
+   - Example: "materials of school ties" → "colours of school ties" → "logos on school ties"
+3. Used topics are stored in `.tmp/vinuchi/used_topics.json`
+4. System Reset clears used topics (all become available again)
+
+### Quick Topics Behavior
+
+- Topics **refresh on every app open** (not cached between sessions)
+- Clicking a quick topic **populates the text box** (user can edit before generating)
+- After clicking, that quick topic is **immediately replaced** with a fresh one
+- Approved topics **never appear again** (until system reset)
+
+---
+
 ## Reset System
 
 Accessed via sidebar "Reset to Default":
@@ -237,6 +307,8 @@ Accessed via sidebar "Reset to Default":
 - All SEO keywords
 - Learning log
 - Usage limit (daily posts counter reset to 10)
+- Used topics (all quick topics become available again)
+- AI-generated topics pool
 
 **What it keeps:**
 - Scraped blogs (training data)
@@ -249,7 +321,11 @@ Accessed via sidebar "Reset to Default":
 ### "AttributeError: PersistentMemory object has no attribute..."
 The app cached an old version. Kill and restart:
 ```bash
+# macOS/Linux
 pkill -f "streamlit run"
+streamlit run app.py
+
+# Windows - Use Task Manager to end Python processes, then restart
 streamlit run app.py
 ```
 

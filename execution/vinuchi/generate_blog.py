@@ -10,7 +10,7 @@ Uses:
 - Pre-delivery review against existing blog database
 
 SECURITY NOTE:
-- ANTHROPIC_API_KEY is loaded from .env (server-side only)
+- ANTHROPIC_API_KEY loaded from .env (local) or st.secrets (Streamlit Cloud)
 - API calls are made via Python's anthropic library (server-side)
 - No browser/client ever receives or uses the API key
 - .env is in .gitignore and should NEVER be committed
@@ -25,7 +25,30 @@ from datetime import datetime
 from dotenv import load_dotenv
 from difflib import SequenceMatcher
 
+# Load .env for local development
 load_dotenv()
+
+
+def _ensure_api_key_from_secrets():
+    """
+    Ensure ANTHROPIC_API_KEY is in environment, checking Streamlit secrets first.
+    This allows the app to work both locally (.env) and on Streamlit Cloud (st.secrets).
+    """
+    # If already in environment (from .env), we're good
+    if os.getenv("ANTHROPIC_API_KEY"):
+        return
+
+    # Try to get from Streamlit secrets (for cloud deployment)
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets') and "ANTHROPIC_API_KEY" in st.secrets:
+            os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
+    except Exception:
+        pass  # Not running in Streamlit context
+
+
+# Ensure API key is available before Anthropic client is created
+_ensure_api_key_from_secrets()
 
 # HARD LIMITS
 MAX_WORDS = 515  # Absolute maximum (500 + 15 leeway)
@@ -163,6 +186,26 @@ Pattern: Weave keywords naturally into flowing sentences - never stuff them arti
 - End with emphatic statement or trailing thought
 - NEVER be brief or punchy - be expansive and conversational
 
+### PILLAR 7: GRAMMAR & SPELLING CORRECTNESS (CRITICAL)
+**NOTE:** The original Vinuchi blogs contain some grammar errors (they were written manually).
+YOU MUST NOT REPLICATE THESE ERRORS. Match the STYLE but use CORRECT GRAMMAR.
+
+GRAMMAR RULES:
+- Use consistent first person throughout (don't switch between "I" and "we" mid-paragraph)
+- Ensure subject-verb agreement (singular subjects take singular verbs)
+- Use correct plural/singular forms ("tie" vs "ties" - match the noun to the context)
+- Keep verb tenses consistent within paragraphs
+- Proper pronoun agreement (don't switch between "you", "one", "they" randomly)
+
+SPELLING:
+- Use British spellings as specified (colour, honour) - these are INTENTIONAL
+- But fix any actual spelling mistakes - the reference blogs may have typos
+- "aswell" and "thankyou" are Vinuchi's signature spellings - KEEP these
+- All other words should be spelled correctly
+
+The goal: Sound like Vinuchi, but polished. Match the voice and style perfectly,
+but write like a professional would - with correct grammar and consistent language.
+
 ################################################################################
 #                         END OF GROUND TRUTH                                  #
 ################################################################################
@@ -297,7 +340,15 @@ DO NOT include any metadata, just the blog content starting with the title.
         prefs = self.memory.get_all_preferences()
         user_seo_keywords = prefs.get('seo_keywords', [])
 
-        prompt = f"""Write a new blog post about: {topic}
+        prompt = f"""################################################################################
+#                    USER'S REQUESTED TOPIC (MUST FOLLOW THIS)                 #
+################################################################################
+
+Write a new blog post about: **{topic}**
+
+IMPORTANT: This blog MUST be specifically about "{topic}".
+Do NOT write about a different topic. The entire blog content should directly
+address and explore this specific subject matter.
 
 """
         # Add SEO keywords reminder if user has added any
@@ -346,6 +397,7 @@ preferences in the system prompt are minor tweaks - they do NOT override this vo
         prompt += f"""
 
 ## REQUIREMENTS:
+- **TOPIC: Write specifically about "{topic}"** - this is the user's chosen topic, follow it closely
 - **HARD LIMIT: MAXIMUM 500 WORDS** - Do NOT exceed this. Aim for 450-490 words.
 - Match the conversational, meandering style of the examples ABOVE
 - Your voice must be INDISTINGUISHABLE from the original blog samples
@@ -354,7 +406,7 @@ preferences in the system prompt are minor tweaks - they do NOT override this vo
 - NO bullet points - use flowing prose only
 - Make it engaging and passionate
 
-Write the complete blog now (under 500 words), starting with the title in CAPS:"""
+Write the complete blog now about "{topic}" (under 500 words), starting with the title in CAPS:"""
 
         return prompt
 
