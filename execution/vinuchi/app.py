@@ -448,35 +448,6 @@ st.markdown("""
         color: #e2e8f0 !important;
     }
 
-    /* Apply button wrapper - invisible to layout */
-    .apply-btn {
-        display: contents !important;
-    }
-    .apply-btn button {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-    }
-    .apply-btn button * {
-        margin: 0 auto !important;
-        text-align: center !important;
-    }
-
-    /* Regenerate button wrapper - invisible to layout */
-    .regenerate-btn {
-        display: contents !important;
-    }
-    .regenerate-btn button {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-    }
-    .regenerate-btn button * {
-        margin: 0 auto !important;
-        text-align: center !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1069,9 +1040,7 @@ def render_main_content():
                 )
 
             with tweak_col2:
-                st.markdown('<div class="apply-btn">', unsafe_allow_html=True)
                 tweak_clicked = st.button("🔧 Apply", use_container_width=True, disabled=not tweak_instruction)
-                st.markdown('</div>', unsafe_allow_html=True)
 
             if tweak_clicked and tweak_instruction:
                 with st.spinner("Applying tweak..."):
@@ -1101,14 +1070,12 @@ def render_main_content():
             col_a, col_b, col_c = st.columns([1.4, 1, 1])
 
             with col_a:
-                st.markdown('<div class="regenerate-btn">', unsafe_allow_html=True)
                 if st.button("🔄 Regenerate", use_container_width=True):
                     original_topic = blog.get('topic_requested', '')
                     if original_topic:
                         with st.spinner("Regenerating..."):
                             if do_generation(original_topic):
                                 st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
 
             with col_b:
                 if st.button("✓ Approve", use_container_width=True, type="primary"):
