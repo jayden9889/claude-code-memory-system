@@ -150,11 +150,16 @@ Streamlit-based UI that provides:
 
 **Approved Blog Viewer:**
 - Open any approved blog to view full content
-- Copy button to copy formatted blog to clipboard
+- Copy button to copy formatted blog to clipboard (uses `st-copy-to-clipboard` package)
 - Edit button to manually modify title and content
 - Edit mode uses dark blue theme matching the blog view (not light/white)
 - Edit mode shows word count validation with color indicators
 - Cancel confirmation dialog prevents accidental loss of changes
+
+**Sharing with Clients:**
+- Simply share the Streamlit Cloud URL with your client
+- They open it in any browser - no installation needed
+- Password protection available (set APP_PASSWORD in Streamlit Cloud secrets)
 
 ### 3. persistent_memory.py - The Memory
 
