@@ -51,8 +51,8 @@ def _ensure_api_key_from_secrets():
 _ensure_api_key_from_secrets()
 
 # HARD LIMITS
-MAX_WORDS = 515  # Absolute maximum (500 + 15 leeway)
-TARGET_WORDS = 480  # Target to aim for
+MAX_WORDS = 600  # Absolute maximum (590 + 10 leeway)
+TARGET_WORDS = 570  # Target to aim for (550-590 range)
 SIMILARITY_THRESHOLD = 0.6  # Block if 60%+ similar to existing blog
 
 # Add parent to path
@@ -180,7 +180,7 @@ Secondary: corporate socks, corporate jewellery, woven ties, printed ties
 Pattern: Weave keywords naturally into flowing sentences - never stuff them artificially
 
 ### PILLAR 6: STRUCTURE
-- 500 words MAXIMUM (target 450-490)
+- Target 550-590 words (this is the ideal range)
 - 8-12 paragraphs of flowing prose
 - Jump straight into the topic - no generic intros
 - End with emphatic statement or trailing thought
@@ -398,7 +398,7 @@ preferences in the system prompt are minor tweaks - they do NOT override this vo
 
 ## REQUIREMENTS:
 - **TOPIC: Write specifically about "{topic}"** - this is the user's chosen topic, follow it closely
-- **HARD LIMIT: MAXIMUM 500 WORDS** - Do NOT exceed this. Aim for 450-490 words.
+- **TARGET LENGTH: 550-590 words** - This is the ideal range. Aim for around 570 words.
 - Match the conversational, meandering style of the examples ABOVE
 - Your voice must be INDISTINGUISHABLE from the original blog samples
 - Include relevant SEO keywords naturally (custom ties, school ties, etc.){seo_reminder}
@@ -406,7 +406,7 @@ preferences in the system prompt are minor tweaks - they do NOT override this vo
 - NO bullet points - use flowing prose only
 - Make it engaging and passionate
 
-Write the complete blog now about "{topic}" (under 500 words), starting with the title in CAPS:"""
+Write the complete blog now about "{topic}" (target 550-590 words), starting with the title in CAPS:"""
 
         return prompt
 
@@ -430,8 +430,8 @@ Write the complete blog now about "{topic}" (under 500 words), starting with the
         # 1. WORD COUNT CHECK (HARD LIMIT)
         if word_count > MAX_WORDS:
             issues.append(f"WORD COUNT EXCEEDED: {word_count} words (max {MAX_WORDS})")
-        elif word_count > 500:
-            warnings.append(f"Word count high: {word_count} words (target: 450-490)")
+        elif word_count > 590:
+            warnings.append(f"Word count slightly high: {word_count} words (target: 550-590)")
 
         # NOTE: Title/content similarity checks REMOVED
         # User explicitly wants to allow similar/duplicate blogs for SEO purposes
@@ -497,8 +497,8 @@ Write the complete blog now about "{topic}" (under 500 words), starting with the
             current_user_prompt = user_prompt
             if attempt > 1:
                 current_user_prompt = user_prompt.replace(
-                    "under 500 words",
-                    f"STRICTLY under 450 words - previous attempt was too long"
+                    "target 550-590 words",
+                    f"STRICTLY 550-580 words - previous attempt was too long"
                 )
 
             try:

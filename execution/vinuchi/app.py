@@ -1002,10 +1002,12 @@ def render_main_content():
             # Calculate word count from ACTUAL content in text area (live count)
             current_word_count = len(edited_content.split()) if edited_content else 0
 
-            # Word count indicator - shows live count as user types
-            if current_word_count <= 500:
-                st.success(f"✓ {current_word_count} words")
-            elif current_word_count <= 515:
+            # Word count indicator - shows live count as user types (target: 550-590)
+            if 550 <= current_word_count <= 590:
+                st.success(f"✓ {current_word_count} words (perfect)")
+            elif current_word_count < 550:
+                st.warning(f"⚠ {current_word_count} words (target: 550-590)")
+            elif current_word_count <= 600:
                 st.warning(f"⚠ {current_word_count} words (slightly over)")
             else:
                 st.error(f"✗ {current_word_count} words (over limit)")
@@ -1233,11 +1235,13 @@ def render_blog_viewer():
 
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # Word count for edited content
+            # Word count for edited content (target: 550-590)
             new_word_count = len(edit_content.split()) if edit_content else 0
-            if new_word_count <= 500:
-                st.success(f"✓ {new_word_count} words")
-            elif new_word_count <= 515:
+            if 550 <= new_word_count <= 590:
+                st.success(f"✓ {new_word_count} words (perfect)")
+            elif new_word_count < 550:
+                st.warning(f"⚠ {new_word_count} words (target: 550-590)")
+            elif new_word_count <= 600:
                 st.warning(f"⚠ {new_word_count} words (slightly over)")
             else:
                 st.error(f"✗ {new_word_count} words (over limit)")
