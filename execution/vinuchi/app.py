@@ -429,6 +429,43 @@ st.markdown("""
         justify-content: center !important;
         align-items: center !important;
     }
+
+    /* Edit mode - dark background for text inputs to match blog view */
+    .edit-mode-container .stTextArea textarea,
+    .edit-mode-container .stTextInput input {
+        background-color: #1a202c !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #4a5568 !important;
+        border-radius: 8px !important;
+    }
+    .edit-mode-container .stTextArea textarea:focus,
+    .edit-mode-container .stTextInput input:focus {
+        border-color: #38a169 !important;
+        box-shadow: 0 0 0 1px #38a169 !important;
+    }
+    .edit-mode-container .stTextArea label,
+    .edit-mode-container .stTextInput label {
+        color: #e2e8f0 !important;
+    }
+
+    /* Apply button - fix centering and sizing */
+    .apply-btn button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        min-height: 38px !important;
+    }
+
+    /* Regenerate button - fix text overflow */
+    .regenerate-btn button {
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1021,7 +1058,9 @@ def render_main_content():
                 )
 
             with tweak_col2:
+                st.markdown('<div class="apply-btn">', unsafe_allow_html=True)
                 tweak_clicked = st.button("🔧 Apply", use_container_width=True, disabled=not tweak_instruction)
+                st.markdown('</div>', unsafe_allow_html=True)
 
             if tweak_clicked and tweak_instruction:
                 with st.spinner("Applying tweak..."):
@@ -1051,12 +1090,14 @@ def render_main_content():
             col_a, col_b, col_c = st.columns(3)
 
             with col_a:
+                st.markdown('<div class="regenerate-btn">', unsafe_allow_html=True)
                 if st.button("🔄 Regenerate", use_container_width=True):
                     original_topic = blog.get('topic_requested', '')
                     if original_topic:
                         with st.spinner("Regenerating..."):
                             if do_generation(original_topic):
                                 st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
             with col_b:
                 if st.button("✓ Approve", use_container_width=True, type="primary"):
@@ -1186,21 +1227,32 @@ def render_blog_viewer():
                     st.session_state.confirm_cancel_edit = False
                     st.rerun()
         else:
-            # Edit mode UI
-            st.markdown("#### ✏️ Edit Blog")
+            # Edit mode UI - styled to match blog view with dark background
+            st.markdown('<div class="edit-mode-container">', unsafe_allow_html=True)
 
-            # Editable title - key manages state, initialized when entering edit mode
+            # Styled header matching the view mode
+            st.markdown("""
+            <div style="background: #1a202c; padding: 1rem 2rem; border-radius: 8px 8px 0 0; border-left: 4px solid #38a169;">
+                <span style="color: #a0aec0; font-size: 0.9rem;">✏️ Editing Blog</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Editable title - styled dark input
             edit_title = st.text_input(
                 "Title",
-                key="edit_title_input"
+                key="edit_title_input",
+                label_visibility="collapsed"
             )
 
-            # Editable content - key manages state, initialized when entering edit mode
+            # Editable content - styled dark text area, larger to match view mode
             edit_content = st.text_area(
                 "Content",
-                height=400,
-                key="edit_content_input"
+                height=500,
+                key="edit_content_input",
+                label_visibility="collapsed"
             )
+
+            st.markdown('</div>', unsafe_allow_html=True)
 
             # Word count for edited content
             new_word_count = len(edit_content.split()) if edit_content else 0
