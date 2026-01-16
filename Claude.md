@@ -140,3 +140,13 @@ You are not a tool-builder, you are an executor. When given a directive:
 - Self-anneal if errors occur
 The user orchestrates at the workflow level, you handle both building AND executing at the task
 level.
+
+## Disaster Recovery Documentation (MANDATORY)
+**The user has no dev background.** Whenever you modify any code, you MUST update the relevant disaster recovery documentation:
+
+**For Vinuchi Blog Writer (`execution/vinuchi/`):**
+- `README.md` - Architecture, components, data flow
+- `REDEPLOY.md` - Setup steps, dependencies, environment
+- `PROMPT_LOG.txt` - All AI prompts and brand directives
+
+**Rule:** If you change code → update the docs. No exceptions.
