@@ -448,41 +448,30 @@ st.markdown("""
         color: #e2e8f0 !important;
     }
 
-    /* Apply button - center content properly */
-    .apply-btn {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-    }
+    /* Apply button - force center everything */
     .apply-btn button {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         text-align: center !important;
-        padding: 8px 16px !important;
-        font-size: 13px !important;
-        min-height: 38px !important;
+        padding: 11px 8px !important;
     }
-    .apply-btn button p,
-    .apply-btn button span,
-    .apply-btn button div {
+    .apply-btn button * {
+        margin: 0 auto !important;
+        text-align: center !important;
+    }
+
+    /* Regenerate button - force center and fit text */
+    .regenerate-btn button {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         text-align: center !important;
-        width: 100% !important;
+        padding: 11px 8px !important;
     }
-
-    /* Regenerate button - make button fit the text */
-    .regenerate-btn {
-        min-width: 120px !important;
-    }
-    .regenerate-btn button {
-        font-size: 11px !important;
-        padding: 8px 6px !important;
-        white-space: nowrap !important;
-        min-width: 100% !important;
-        letter-spacing: -0.3px !important;
+    .regenerate-btn button * {
+        margin: 0 auto !important;
+        text-align: center !important;
     }
 </style>
 """, unsafe_allow_html=True)
