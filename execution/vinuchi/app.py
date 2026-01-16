@@ -305,8 +305,8 @@ st.markdown("""
         border-color: #38a169 !important;
     }
 
-    /* Prevent button text from wrapping (except quick topics) */
-    .stButton button {
+    /* Prevent button text from wrapping in main area only */
+    .main .stButton button {
         white-space: nowrap !important;
     }
 
@@ -421,13 +421,17 @@ st.markdown("""
         font-size: 14px !important;
     }
 
-    /* Quick Topics buttons - generous padding for clean look */
+    /* Quick Topics buttons - generous padding and text wrapping */
     section[data-testid="stSidebar"] [data-testid="stButton"] button {
-        padding: 14px 32px !important;
+        padding: 14px 20px !important;
         text-align: center !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        line-height: 1.3 !important;
+        min-height: 50px !important;
     }
 
     /* Edit mode - dark background for text inputs to match blog view */
@@ -952,9 +956,8 @@ def render_main_content():
         suggestions = st.session_state.quick_topics
 
         for i, sug in enumerate(suggestions):
-            # Truncate display text for clean buttons (shorter = more padding room)
-            display_text = sug if len(sug) <= 40 else sug[:37] + "..."
-            clicked = st.button(display_text, key=f"quick_{i}", use_container_width=True, disabled=st.session_state.is_generating)
+            # Show full topic text (CSS allows proper wrapping)
+            clicked = st.button(sug, key=f"quick_{i}", use_container_width=True, disabled=st.session_state.is_generating)
             if clicked:
                 # Set pending topic (will be applied before form renders on next rerun)
                 st.session_state.pending_quick_topic = sug
