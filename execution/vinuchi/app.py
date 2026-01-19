@@ -21,8 +21,12 @@ Streamlit Cloud: Uses st.secrets (configured in app settings)
 import streamlit as st
 import sys
 import os
+import io
 from pathlib import Path
 from dotenv import load_dotenv
+from docx import Document
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 # Load environment variables FIRST (for local development)
 load_dotenv()
@@ -1159,6 +1163,39 @@ def format_blog_for_copy(title: str, content: str) -> str:
     return f"{formatted_title}\n\n{formatted_content}"
 
 
+def create_blog_word_doc(title: str, content: str) -> bytes:
+    """
+    Create a Word document (.docx) with the blog content.
+    Returns bytes that can be used with st.download_button.
+    """
+    doc = Document()
+
+    # Add title - bold, uppercase, larger font
+    title_para = doc.add_paragraph()
+    title_run = title_para.add_run(title.upper())
+    title_run.bold = True
+    title_run.font.size = Pt(16)
+    title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Add spacing after title
+    doc.add_paragraph()
+
+    # Add content paragraphs
+    paragraphs = content.strip().split('\n')
+    for para_text in paragraphs:
+        para_text = para_text.strip()
+        if para_text:
+            para = doc.add_paragraph()
+            run = para.add_run(para_text)
+            run.font.size = Pt(11)
+
+    # Save to bytes buffer
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
 def render_blog_viewer():
     """Render the full blog viewer when a blog is selected."""
     if not st.session_state.viewing_blog_id:
@@ -1302,13 +1339,16 @@ def render_blog_viewer():
             # Create a safe filename from the title
             safe_title = "".join(c if c.isalnum() or c in (' ', '-', '_') else '' for c in blog['title'])
             safe_title = safe_title[:50].strip().replace(' ', '_')  # Limit length, replace spaces
-            filename = f"{safe_title}.txt"
+            filename = f"{safe_title}.docx"
+
+            # Generate Word document
+            doc_bytes = create_blog_word_doc(blog['title'], blog['content'])
 
             st.download_button(
                 label="⬇️ Download",
-                data=formatted_blog,
+                data=doc_bytes,
                 file_name=filename,
-                mime="text/plain",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 key="download_blog_btn",
                 use_container_width=True
             )
@@ -1373,37 +1413,11 @@ def render_approved_blogs():
             </div>
             """, unsafe_allow_html=True)
 
-            # Format blog for copy/download
-            formatted_blog = format_blog_for_copy(blog['title'], content)
-
-            # Create safe filename
-            safe_title = "".join(c if c.isalnum() or c in (' ', '-', '_') else '' for c in blog['title'])
-            safe_title = safe_title[:50].strip().replace(' ', '_')
-            filename = f"{safe_title}.txt"
-
-            # Buttons: Open, Copy, Download
+            # Visible, styled button to open the blog
             st.markdown('<div class="blog-card-btn">', unsafe_allow_html=True)
-            btn_col1, btn_col2, btn_col3 = st.columns(3)
-
-            with btn_col1:
-                if st.button("📖 Open", key=f"view_{blog['id']}", use_container_width=True):
-                    st.session_state.viewing_blog_id = blog['id']
-                    st.rerun()
-
-            with btn_col2:
-                from st_copy_to_clipboard import st_copy_to_clipboard
-                st_copy_to_clipboard(formatted_blog, "📋 Copy", key=f"copy_{blog['id']}")
-
-            with btn_col3:
-                st.download_button(
-                    label="⬇️",
-                    data=formatted_blog,
-                    file_name=filename,
-                    mime="text/plain",
-                    key=f"download_{blog['id']}",
-                    use_container_width=True
-                )
-
+            if st.button("📖 Open Blog", key=f"view_{blog['id']}", use_container_width=True):
+                st.session_state.viewing_blog_id = blog['id']
+                st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
 
