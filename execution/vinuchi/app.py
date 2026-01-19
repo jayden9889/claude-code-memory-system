@@ -1287,19 +1287,34 @@ def render_blog_viewer():
 
         st.markdown("")
 
-        # Copy and Edit buttons side by side
-        col_copy, col_edit = st.columns(2)
+        # Copy, Download, and Edit buttons side by side
+        col_copy, col_download, col_edit = st.columns(3)
 
-        # Format blog for copying
+        # Format blog for copying/downloading
         formatted_blog = format_blog_for_copy(blog['title'], blog['content'])
 
         with col_copy:
             # Use st-copy-to-clipboard for reliable clipboard copy
             from st_copy_to_clipboard import st_copy_to_clipboard
-            st_copy_to_clipboard(formatted_blog, "📋 Copy Blog", key="copy_blog_btn")
+            st_copy_to_clipboard(formatted_blog, "📋 Copy", key="copy_blog_btn")
+
+        with col_download:
+            # Create a safe filename from the title
+            safe_title = "".join(c if c.isalnum() or c in (' ', '-', '_') else '' for c in blog['title'])
+            safe_title = safe_title[:50].strip().replace(' ', '_')  # Limit length, replace spaces
+            filename = f"{safe_title}.txt"
+
+            st.download_button(
+                label="⬇️ Download",
+                data=formatted_blog,
+                file_name=filename,
+                mime="text/plain",
+                key="download_blog_btn",
+                use_container_width=True
+            )
 
         with col_edit:
-            if st.button("✏️ Edit Blog", key="edit_blog_btn", use_container_width=True):
+            if st.button("✏️ Edit", key="edit_blog_btn", use_container_width=True):
                 st.session_state.editing_blog = True
                 # Initialize the widget keys directly (Streamlit manages state via keys)
                 st.session_state.edit_title_input = blog['title']

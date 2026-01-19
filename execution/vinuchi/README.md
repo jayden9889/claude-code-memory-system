@@ -166,6 +166,7 @@ Streamlit-based UI that provides:
 **Approved Blog Viewer:**
 - Open any approved blog to view full content
 - Copy button to copy formatted blog to clipboard (uses `st-copy-to-clipboard` package)
+- Download button to save blog as .txt file (works on Mac/Windows)
 - Edit button to manually modify title and content
 - Edit mode uses dark blue theme matching the blog view (not light/white)
 - Edit mode shows word count validation with color indicators
