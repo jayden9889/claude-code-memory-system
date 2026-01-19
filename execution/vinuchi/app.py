@@ -1373,11 +1373,37 @@ def render_approved_blogs():
             </div>
             """, unsafe_allow_html=True)
 
-            # Visible, styled button to open the blog
+            # Format blog for copy/download
+            formatted_blog = format_blog_for_copy(blog['title'], content)
+
+            # Create safe filename
+            safe_title = "".join(c if c.isalnum() or c in (' ', '-', '_') else '' for c in blog['title'])
+            safe_title = safe_title[:50].strip().replace(' ', '_')
+            filename = f"{safe_title}.txt"
+
+            # Buttons: Open, Copy, Download
             st.markdown('<div class="blog-card-btn">', unsafe_allow_html=True)
-            if st.button("📖 Open Blog", key=f"view_{blog['id']}", use_container_width=True):
-                st.session_state.viewing_blog_id = blog['id']
-                st.rerun()
+            btn_col1, btn_col2, btn_col3 = st.columns(3)
+
+            with btn_col1:
+                if st.button("📖 Open", key=f"view_{blog['id']}", use_container_width=True):
+                    st.session_state.viewing_blog_id = blog['id']
+                    st.rerun()
+
+            with btn_col2:
+                from st_copy_to_clipboard import st_copy_to_clipboard
+                st_copy_to_clipboard(formatted_blog, "📋 Copy", key=f"copy_{blog['id']}")
+
+            with btn_col3:
+                st.download_button(
+                    label="⬇️",
+                    data=formatted_blog,
+                    file_name=filename,
+                    mime="text/plain",
+                    key=f"download_{blog['id']}",
+                    use_container_width=True
+                )
+
             st.markdown('</div>', unsafe_allow_html=True)
 
 
