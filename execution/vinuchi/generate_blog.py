@@ -215,6 +215,13 @@ Secondary keywords (use 1-2+ times per blog):
    - Aim for 15-25+ total keyword uses across the entire blog
    - The more keywords, the better - as long as sentences still flow naturally
 
+6. **ALWAYS USE PLURAL FORMS:**
+   - CORRECT: "custom school ties" NOT "custom school tie"
+   - CORRECT: "corporate ties" NOT "corporate tie"
+   - CORRECT: "branded scarves" NOT "branded scarf"
+   - We sell TIES (plural) - always use the plural form of keywords
+   - The only exception is when specifically talking about ONE item (rare)
+
 ### PILLAR 6: STRUCTURE
 - **CRITICAL: Write 550-590 words** - NOT less, NOT more. Count your words!
 - This is LONGER than typical blog posts - be expansive and thorough
