@@ -270,9 +270,15 @@ def get_quick_topics(count: int = 4, force_fresh: bool = True) -> list:
     return topics
 
 
-def refresh_topics(count: int = 4) -> list:
-    """Force refresh topics (for the refresh button)."""
-    topics = generate_fresh_topics(count)
+def refresh_topics(count: int = 4, exclude_current: list = None) -> list:
+    """
+    Force refresh topics (for the refresh/shuffle button).
+
+    IMPORTANT: Pass the current topics as exclude_current to ensure
+    the user gets COMPLETELY NEW topics, not recycled ones.
+    """
+    # Exclude the current topics so user gets entirely fresh ones
+    topics = generate_fresh_topics(count, exclude_topics=exclude_current or [])
     current_window = _get_window_id()
     _save_topics(current_window, topics)
     return topics

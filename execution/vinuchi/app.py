@@ -977,10 +977,12 @@ def render_main_content():
 
                 st.rerun()
 
-        # Refresh quick topics button
+        # Refresh quick topics button - EXCLUDES current topics to ensure completely fresh ones
         if st.button("🔄 New Topics", use_container_width=True):
             from topic_generator import refresh_topics
-            st.session_state.quick_topics = refresh_topics(4)
+            # Pass current topics so they get EXCLUDED - user wants NEW topics, not recycled
+            current_topics = st.session_state.quick_topics or []
+            st.session_state.quick_topics = refresh_topics(4, exclude_current=current_topics)
             st.rerun()
 
     with col2:
