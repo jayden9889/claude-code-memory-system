@@ -1,7 +1,7 @@
 ================================================================================
 VINUCHI BLOG WRITER - PROMPT LOG
 ================================================================================
-Last Updated: January 21, 2026 (MAJOR UPDATE: Pillar 5 rewritten - aggressive SEO-first strategy with comparisons, cross-references, heavy keyword repetition)
+Last Updated: January 21, 2026 (Added Rule 12: Never use pronouns for products - always repeat full keyword phrase)
 Purpose: Backup of all system prompts and brand directives used in this project
 
 MAINTENANCE NOTE: This file MUST be updated whenever ANY system prompt, brand
@@ -129,6 +129,17 @@ Secondary keywords (use 1-2+ times per blog):
     - "Speaking of school ties, our corporate ties use the same premium materials..."
     - "Just like our custom ties, our branded scarves and corporate scarves follow..."
     - Transitions between topics are perfect for sneaking in extra keywords
+
+12. **NEVER USE PRONOUNS FOR PRODUCTS - ALWAYS REPEAT THE FULL KEYWORD:**
+    - WRONG: "these ties become part of the recipient's wardrobe"
+    - CORRECT: "these custom ties become part of the recipient's wardrobe"
+    - WRONG: "the ties are manufactured locally"
+    - CORRECT: "the corporate ties are manufactured locally"
+    - WRONG: "they make perfect gifts" or "them as awards"
+    - CORRECT: "custom ties make perfect gifts" or "corporate ties as awards"
+    - NEVER use: "these ties", "the ties", "they", "them", "it" when referring to products
+    - ALWAYS repeat: "these custom ties", "these school ties", "these corporate ties", etc.
+    - Every single reference to a product is an SEO opportunity - don't waste it on pronouns
 
 **KEYWORD DENSITY TARGET: 25-35+ keyword uses per blog**
 The more keywords, the higher the SEO score. Use EVERY technique above in EVERY blog.
