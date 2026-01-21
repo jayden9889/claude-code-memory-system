@@ -222,6 +222,35 @@ Secondary keywords (use 1-2+ times per blog):
    - We sell TIES (plural) - always use the plural form of keywords
    - The only exception is when specifically talking about ONE item (rare)
 
+7. **END PARAGRAPHS WITH KEYWORD SUMMARIES:**
+   - After making a point, ADD a closing sentence that stacks keywords
+   - Example: After discussing woven ties, end with: "and this is why woven ties make perfect school ties, corporate ties, and custom ties"
+   - Example: After discussing quality, end with: "which is exactly why our custom ties, branded ties, and promotional ties are trusted by schools and companies alike"
+   - This technique naturally adds 3-5 extra keywords per paragraph
+
+8. **USE RHETORICAL QUESTIONS WITH KEYWORDS:**
+   - "Looking for custom ties, school ties, or corporate ties? We manufacture them all right here in South Africa."
+   - "Need branded scarves, corporate scarves, or promotional ties? That's exactly what we specialise in."
+   - Questions engage readers while packing in keywords
+
+9. **"WHETHER...OR" KEYWORD CONSTRUCTIONS:**
+   - "Whether you need school ties or corporate ties, custom ties or branded ties, we have you covered"
+   - "Whether it's matric ties, club ties, or company ties, the quality remains the same"
+   - This construction can fit 4-6 keywords in one sentence
+
+10. **REINFORCING KEYWORD STATEMENTS:**
+    - "That's precisely why our custom ties, school ties, and corporate ties are chosen by..."
+    - "This is what makes our branded ties, promotional ties, and woven ties stand out..."
+    - Use phrases like "that's why", "this is what", "which is exactly why" to lead into keyword stacks
+
+11. **TRANSITIONAL KEYWORD BRIDGES:**
+    - "Speaking of school ties, our corporate ties use the same premium materials..."
+    - "Just like our custom ties, our branded scarves and corporate scarves follow..."
+    - Transitions between topics are perfect for sneaking in extra keywords
+
+**KEYWORD DENSITY TARGET: 25-35+ keyword uses per blog**
+The more keywords, the higher the SEO score. Use EVERY technique above in EVERY blog.
+
 ### PILLAR 6: STRUCTURE
 - **CRITICAL: Write 550-590 words** - NOT less, NOT more. Count your words!
 - This is LONGER than typical blog posts - be expansive and thorough
